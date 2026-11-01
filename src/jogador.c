@@ -11,7 +11,7 @@ void InicializarJogador(Jogador *jogador)
     jogador->estaNoChao = false;
     jogador->direcao = 1;
     jogador->texturaCorrida = LoadTexture("assets/images/nico/nico_corrida_sheet.png");
-    jogador->texturaParado = LoadTexture("assets/images/nico/nico_parado.png");
+    jogador->texturaParado = LoadTexture("assets/images/nico/nico_parado_12_sheet.png");
     jogador->texturaSalto = LoadTexture("assets/images/nico/nico_salto.png");
     jogador->tempoAnimacao = 0.0f;
     jogador->quadroAtual = 0;
@@ -23,6 +23,8 @@ void InicializarJogador(Jogador *jogador)
 
 void AtualizarJogador(Jogador *jogador, float dt)
 {
+    bool estavaAndando = jogador->andando;
+    bool estavaNoChao = jogador->estaNoChao;
     float movimentoX = 0.0f;
 
     if (IsKeyDown(KEY_A)) movimentoX -= 1.0f;
@@ -54,11 +56,19 @@ void AtualizarJogador(Jogador *jogador, float dt)
     if (jogador->corpo.x + jogador->corpo.width > GetScreenWidth()) {
         jogador->corpo.x = (float)GetScreenWidth() - jogador->corpo.width;
     }
-    if (jogador->andando && jogador->estaNoChao) {
+    // Cada estado comeca no primeiro quadro, com seu proprio ritmo.
+    if (estavaAndando != jogador->andando || estavaNoChao != jogador->estaNoChao) {
+        jogador->tempoAnimacao = 0.0f;
+        jogador->quadroAtual = 0;
+    }
+    if (jogador->estaNoChao) {
+        // Repouso: 12 quadros de 0,2 s, totalizando 2,4 s por ciclo.
+        float intervalo = jogador->andando ? 0.1f : 0.2f;
+        int totalQuadros = jogador->andando ? 8 : 12;
         jogador->tempoAnimacao += dt;
-        while (jogador->tempoAnimacao >= 0.1f) {
-            jogador->tempoAnimacao -= 0.1f;
-            jogador->quadroAtual = (jogador->quadroAtual + 1) % 8;
+        while (jogador->tempoAnimacao >= intervalo) {
+            jogador->tempoAnimacao -= intervalo;
+            jogador->quadroAtual = (jogador->quadroAtual + 1) % totalQuadros;
         }
     } else {
         jogador->tempoAnimacao = 0.0f;
@@ -83,15 +93,16 @@ void DesenharJogador(const Jogador *jogador)
         DrawRectangleRec(jogador->corpo, BLUE);
         return;
     }
-    float largura = correndo ? textura.width / 4.0f : (float)textura.width;
-    float altura = correndo ? textura.height / 2.0f : (float)textura.height;
-    int quadro = correndo ? jogador->quadroAtual : 0;
+    float largura = jogador->estaNoChao ? textura.width / 4.0f : (float)textura.width;
+    float altura = correndo ? textura.height / 2.0f :
+        (jogador->estaNoChao ? textura.height / 3.0f : (float)textura.height);
+    int quadro = jogador->estaNoChao ? jogador->quadroAtual : 0;
     Rectangle origem = { (quadro % 4) * largura, (quadro / 4) * altura,
                          largura * jogador->direcao, altura };
     // A arte e maior que o colisor; os pes ficam ancorados na base do corpo.
-    float alturaVisual = correndo ? 120.0f : 168.0f;
+    float alturaVisual = correndo ? 120.0f : (jogador->estaNoChao ? 128.0f : 168.0f);
     float larguraVisual = alturaVisual * largura / altura;
-    float ancoraY = correndo ? 0.98f : 736.0f / 768.0f;
+    float ancoraY = correndo ? 0.98f : (jogador->estaNoChao ? 0.94f : 736.0f / 768.0f);
     Rectangle destino = { jogador->corpo.x + jogador->corpo.width / 2.0f - larguraVisual / 2.0f,
         jogador->corpo.y + jogador->corpo.height - alturaVisual * ancoraY,
         larguraVisual, alturaVisual };
