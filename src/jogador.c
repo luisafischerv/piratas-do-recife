@@ -4,6 +4,13 @@
 #define FORCA_SALTO            520.0f
 #define GRAVIDADE              1300.0f
 
+// Dimensoes de desenho, independentes do retangulo de colisao.
+// Corrida e repouso crescem juntos para conservar a proporcao ja aprovada.
+#define ALTURA_VISUAL_SALTO    140.0f
+#define ESCALA_VISUAL_CHAO     (140.0f / 120.0f)
+#define ALTURA_VISUAL_CORRIDA  (120.0f * ESCALA_VISUAL_CHAO)
+#define ALTURA_VISUAL_REPOUSO  (128.0f * ESCALA_VISUAL_CHAO)
+
 void InicializarJogador(Jogador *jogador)
 {
     jogador->corpo = (Rectangle){ 100.0f, 400.0f, 48.0f, 64.0f };
@@ -134,7 +141,8 @@ void DesenharJogador(const Jogador *jogador)
     Rectangle origem = { (quadro % colunas) * largura, (quadro / colunas) * altura,
                          largura * jogador->direcao, altura };
     // A arte e maior que o colisor; os pes ficam ancorados na base do corpo.
-    float alturaVisual = saltando ? 140.0f : (correndo ? 120.0f : 128.0f);
+    float alturaVisual = saltando ? ALTURA_VISUAL_SALTO :
+        (correndo ? ALTURA_VISUAL_CORRIDA : ALTURA_VISUAL_REPOUSO);
     float larguraVisual = alturaVisual * largura / altura;
     // Subida e apice usam a mesma referencia vertical do quadril.
     // A troca de pose nao deve acrescentar um salto a trajetoria da fisica.
