@@ -82,34 +82,19 @@ O arquivo do ranking é criado automaticamente na primeira vitória e não deve 
 
 ---
 
-## Como compilar
+## Como compilar e executar
 
-Pré-requisitos: compilador C (GCC ou Clang) e **Raylib** instalada. Versão da Raylib usada pelo grupo: _a definir_.
+Pré-requisitos: GNU Make, compilador C e Raylib instalada. Os detalhes específicos de cada computador ficam em `config.mk`, que não é versionado.
 
-**Linux**
+1. Copie `config.mk.example` para `config.mk` e ajuste `CC` e `RAYLIB_DIR` para a instalação local. Se `gcc` e `pkg-config raylib` já estiverem configurados no sistema, o arquivo local pode ser dispensado.
+2. Na raiz do projeto, compile com `make`.
+3. Execute com `make run`.
 
-```bash
-gcc src/*.c -Iinclude -o piratas -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
-./piratas
-```
+Para limpar os arquivos compilados, use `make clean`. O Makefile usa `pkg-config` quando disponível e aceita `RAYLIB_DIR` para instalações locais. No macOS, configure também `RAYLIB_LIBS` em `config.mk` com as dependências/frameworks da Raylib instalados no computador.
 
-**Windows (MinGW / w64devkit)**
-
-```bash
-gcc src/*.c -Iinclude -o piratas.exe -lraylib -lopengl32 -lgdi32 -lwinmm
-piratas.exe
-```
-
-**macOS (Raylib pelo Homebrew)**
-
-```bash
-gcc src/*.c -Iinclude -I/opt/homebrew/include -L/opt/homebrew/lib -o piratas \
-    -lraylib -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
-./piratas
-```
+No Windows com MSYS2, se o PowerShell não reconhecer `make`, adicione `C:\msys64\usr\bin` ao PATH do usuário e abra um novo terminal. No w64devkit, use o GNU Make fornecido com a distribuição ou adicione sua pasta `bin` ao PATH.
 
 Execute o jogo a partir da raiz do repositório para que a pasta `assets/` seja encontrada.
-
 ### Testes isolados
 
 ```bash

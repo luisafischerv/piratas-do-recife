@@ -1,57 +1,67 @@
-CC      ?= gcc
+.DEFAULT_GOAL := all
+
+-include config.mk
+
+CC      = gcc
 TARGET  ?= piratas
+BUILD   ?= build
 SRC_DIR ?= src
 INC_DIR ?= include
-BUILD   ?= build
+
+CFLAGS   ?= -std=c11 -Wall -Wextra -Wpedantic -O2
+CPPFLAGS += -I$(INC_DIR)
 
 SOURCES := $(wildcard $(SRC_DIR)/*.c)
 OBJECTS := $(patsubst $(SRC_DIR)/%.c,$(BUILD)/%.o,$(SOURCES))
+DEPS    := $(OBJECTS:.o=.d)
 
-CPPFLAGS += -I$(INC_DIR)
-CFLAGS   ?= -std=c11 -Wall -Wextra -Wpedantic -O2
-
-# Prefer pkg-config (Linux/macOS and some Windows setups).
-RAYLIB_CFLAGS ?= $(shell pkg-config --cflags raylib 2>/dev/null)
-RAYLIB_LIBS   ?= $(shell pkg-config --libs raylib 2>/dev/null)
-
-# Override these on Windows if pkg-config is unavailable, for example:
-# mingw32-make RAYLIB_CFLAGS="-IC:/raylib/include" RAYLIB_LIBS="-LC:/raylib/lib -lraylib -lopengl32 -lgdi32 -lwinmm"
-CPPFLAGS += $(RAYLIB_CFLAGS)
-LDLIBS   += $(RAYLIB_LIBS)
-
-ifeq ($(OS),Windows_NT)
-    EXE := .exe
-    ifeq ($(strip $(RAYLIB_LIBS)),)
-        LDLIBS += -lraylib -lopengl32 -lgdi32 -lwinmm
-    endif
+# Use RAYLIB_DIR for a local installation, or pkg-config when available.
+ifneq ($(strip $(RAYLIB_DIR)),)
+CPPFLAGS += -I"$(RAYLIB_DIR)"
+LDLIBS   += -L"$(RAYLIB_DIR)" -lraylib
 else
-    EXE :=
-    ifeq ($(strip $(RAYLIB_LIBS)),)
-        LDLIBS += -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
-    endif
+CPPFLAGS += $(shell pkg-config --cflags raylib 2>/dev/null)
+LDLIBS   += $(shell pkg-config --libs raylib 2>/dev/null)
 endif
 
-.PHONY: all run clean info
+ifeq ($(OS),Windows_NT)
+APP := $(BUILD)/$(TARGET).exe
+ifeq ($(strip $(LDLIBS)),)
+LDLIBS += -lraylib
+endif
+LDLIBS += -lopengl32 -lgdi32 -lwinmm
+else
+APP := $(BUILD)/$(TARGET)
+ifeq ($(strip $(LDLIBS)),)
+LDLIBS += -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+endif
+endif
 
-all: $(BUILD)/$(TARGET)$(EXE)
+.PHONY: all run clean
 
-$(BUILD)/$(TARGET)$(EXE): $(OBJECTS)
+all: $(APP)
+
+run: $(APP)
+	./$(APP)
+
+$(APP): $(OBJECTS)
 	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 $(BUILD)/%.o: $(SRC_DIR)/%.c | $(BUILD)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -MMD -MP -c $< -o $@
 
 $(BUILD):
+ifeq ($(OS),Windows_NT)
+	@powershell -NoProfile -Command "New-Item -ItemType Directory -Force -Path '$(BUILD)' | Out-Null"
+else
 	@mkdir -p $(BUILD)
-
-run: all
-	./$(BUILD)/$(TARGET)$(EXE)
+endif
 
 clean:
+ifeq ($(OS),Windows_NT)
+	@powershell -NoProfile -Command "if (Test-Path -LiteralPath '$(BUILD)') { Remove-Item -LiteralPath '$(BUILD)' -Recurse -Force }"
+else
 	$(RM) -r $(BUILD)
+endif
 
-info:
-	@echo "Compiler: $(CC)"
-	@echo "Sources:  $(SOURCES)"
-	@echo "Raylib CFLAGS: $(RAYLIB_CFLAGS)"
-	@echo "Raylib LIBS:   $(RAYLIB_LIBS)"
+-include $(DEPS)
