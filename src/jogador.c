@@ -12,13 +12,19 @@ void InicializarJogador(Jogador *jogador)
     jogador->direcao = 1;
     jogador->texturaCorrida = LoadTexture("assets/images/nico/nico_corrida_sheet.png");
     jogador->texturaParado = LoadTexture("assets/images/nico/nico_parado_12_sheet.png");
-    jogador->texturaSalto = LoadTexture("assets/images/nico/nico_salto.png");
+    jogador->texturaSalto = LoadTexture("assets/images/nico/nico_salto_vertical_sheet.png");
+    jogador->texturaSaltoDiagonal = LoadTexture("assets/images/nico/nico_salto_diagonal_sheet.png");
+    jogador->saltoDiagonal = false;
+    jogador->preparoSalto = 0.0f;
+    jogador->tempoNoAr = 0.0f;
+    jogador->tempoPouso = 0.0f;
     jogador->tempoAnimacao = 0.0f;
     jogador->quadroAtual = 0;
     jogador->andando = false;
     if (jogador->texturaCorrida.id) SetTextureFilter(jogador->texturaCorrida, TEXTURE_FILTER_BILINEAR);
     if (jogador->texturaParado.id) SetTextureFilter(jogador->texturaParado, TEXTURE_FILTER_BILINEAR);
     if (jogador->texturaSalto.id) SetTextureFilter(jogador->texturaSalto, TEXTURE_FILTER_BILINEAR);
+    if (jogador->texturaSaltoDiagonal.id) SetTextureFilter(jogador->texturaSaltoDiagonal, TEXTURE_FILTER_BILINEAR);
 }
 
 void AtualizarJogador(Jogador *jogador, float dt)
@@ -26,6 +32,15 @@ void AtualizarJogador(Jogador *jogador, float dt)
     bool estavaAndando = jogador->andando;
     bool estavaNoChao = jogador->estaNoChao;
     float movimentoX = 0.0f;
+    if (jogador->tempoPouso > 0.0f) jogador->tempoPouso -= dt;
+    if (jogador->preparoSalto > 0.0f) {
+        jogador->preparoSalto -= dt;
+        if (jogador->preparoSalto <= 0.0f && jogador->estaNoChao) {
+            jogador->velocidadeY = -FORCA_SALTO;
+            jogador->estaNoChao = false;
+            jogador->tempoNoAr = 0.0f;
+        }
+    }
 
     if (IsKeyDown(KEY_A)) movimentoX -= 1.0f;
     if (IsKeyDown(KEY_D)) movimentoX += 1.0f;
@@ -36,9 +51,11 @@ void AtualizarJogador(Jogador *jogador, float dt)
     if (movimentoX < 0.0f) jogador->direcao = -1;
     if (movimentoX > 0.0f) jogador->direcao = 1;
 
-    if (IsKeyPressed(KEY_SPACE) && jogador->estaNoChao) {
-        jogador->velocidadeY = -FORCA_SALTO;
-        jogador->estaNoChao = false;
+    if (IsKeyPressed(KEY_SPACE) && jogador->estaNoChao && jogador->preparoSalto <= 0.0f) {
+        // Guarda a variante ate o pouso, evitando trocar de folha no ar.
+        jogador->saltoDiagonal = jogador->andando;
+        jogador->preparoSalto = 0.04f;
+        jogador->tempoPouso = 0.0f;
     }
 
     
@@ -46,10 +63,13 @@ void AtualizarJogador(Jogador *jogador, float dt)
     jogador->corpo.y += jogador->velocidadeY * dt;
 
     const float chaoY = (float)GetScreenHeight() - 100.0f;
+    bool estavaNoAr = !jogador->estaNoChao;
+    if (estavaNoAr) jogador->tempoNoAr += dt;
     if (jogador->corpo.y + jogador->corpo.height >= chaoY) {
         jogador->corpo.y = chaoY - jogador->corpo.height;
         jogador->velocidadeY = 0.0f;
         jogador->estaNoChao = true;
+        if (estavaNoAr) jogador->tempoPouso = 0.1f;
     }
 
     if (jogador->corpo.x < 0.0f) jogador->corpo.x = 0.0f;
@@ -81,29 +101,53 @@ void DescarregarJogador(Jogador *jogador)
     if (jogador->texturaCorrida.id) UnloadTexture(jogador->texturaCorrida);
     if (jogador->texturaParado.id) UnloadTexture(jogador->texturaParado);
     if (jogador->texturaSalto.id) UnloadTexture(jogador->texturaSalto);
+    if (jogador->texturaSaltoDiagonal.id) UnloadTexture(jogador->texturaSaltoDiagonal);
+    jogador->texturaSaltoDiagonal.id = 0;
     jogador->texturaCorrida.id = jogador->texturaParado.id = jogador->texturaSalto.id = 0;
 }
 
 void DesenharJogador(const Jogador *jogador)
 {
+    bool saltando = !jogador->estaNoChao || jogador->preparoSalto > 0.0f || jogador->tempoPouso > 0.0f;
     bool correndo = jogador->andando && jogador->estaNoChao;
-    Texture2D textura = !jogador->estaNoChao ? jogador->texturaSalto :
+    Texture2D texturaSalto = jogador->saltoDiagonal && jogador->texturaSaltoDiagonal.id ?
+        jogador->texturaSaltoDiagonal : jogador->texturaSalto;
+    Texture2D textura = saltando ? texturaSalto :
         (correndo ? jogador->texturaCorrida : jogador->texturaParado);
     if (!textura.id) {
         DrawRectangleRec(jogador->corpo, BLUE);
         return;
     }
-    float largura = jogador->estaNoChao ? textura.width / 4.0f : (float)textura.width;
-    float altura = correndo ? textura.height / 2.0f :
-        (jogador->estaNoChao ? textura.height / 3.0f : (float)textura.height);
-    int quadro = jogador->estaNoChao ? jogador->quadroAtual : 0;
-    Rectangle origem = { (quadro % 4) * largura, (quadro / 4) * altura,
+    int colunas = saltando ? 3 : 4;
+    int linhas = saltando || correndo ? 2 : 3;
+    float largura = (float)textura.width / colunas;
+    float altura = (float)textura.height / linhas;
+    int quadro = jogador->quadroAtual;
+    if (saltando) {
+        if (jogador->preparoSalto > 0.0f) quadro = 0;
+        else if (jogador->estaNoChao) quadro = 5;
+        else if (jogador->tempoNoAr < 0.08f && jogador->velocidadeY < 0.0f) quadro = 1;
+        else if (jogador->velocidadeY < -80.0f) quadro = 2;
+        else if (jogador->velocidadeY <= 80.0f) quadro = 3;
+        else quadro = 4;
+    }
+    Rectangle origem = { (quadro % colunas) * largura, (quadro / colunas) * altura,
                          largura * jogador->direcao, altura };
     // A arte e maior que o colisor; os pes ficam ancorados na base do corpo.
-    float alturaVisual = correndo ? 120.0f : (jogador->estaNoChao ? 128.0f : 168.0f);
+    float alturaVisual = saltando ? 140.0f : (correndo ? 120.0f : 128.0f);
     float larguraVisual = alturaVisual * largura / altura;
-    float ancoraY = correndo ? 0.98f : (jogador->estaNoChao ? 0.94f : 736.0f / 768.0f);
-    Rectangle destino = { jogador->corpo.x + jogador->corpo.width / 2.0f - larguraVisual / 2.0f,
+    // Subida e apice usam a mesma referencia vertical do quadril.
+    // A troca de pose nao deve acrescentar um salto a trajetoria da fisica.
+    const float ancorasSalto[6] = {0.96f, 0.88f, 0.82f, 0.82f, 0.88f, 0.94f};
+    // Centro do quadril em cada celula de 512 px, independente dos bracos.
+    const float centrosSalto[6] = {258.0f, 255.0f, 250.0f, 259.0f, 257.0f, 255.0f};
+    const float ancorasDiagonal[6] = {0.94f, 0.83f, 0.81f, 0.81f, 0.85f, 0.96f};
+    const float centrosDiagonal[6] = {250.0f, 258.0f, 254.0f, 263.0f, 265.0f, 259.0f};
+    bool diagonal = saltando && jogador->saltoDiagonal && jogador->texturaSaltoDiagonal.id;
+    float ancoraY = saltando ? (diagonal ? ancorasDiagonal[quadro] : ancorasSalto[quadro]) : (correndo ? 0.98f : 0.94f);
+    float ancoraX = saltando ? (diagonal ? centrosDiagonal[quadro] : centrosSalto[quadro]) / 512.0f : 0.5f;
+    if (jogador->direcao < 0) ancoraX = 1.0f - ancoraX;
+    Rectangle destino = { jogador->corpo.x + jogador->corpo.width / 2.0f - larguraVisual * ancoraX,
         jogador->corpo.y + jogador->corpo.height - alturaVisual * ancoraY,
         larguraVisual, alturaVisual };
     DrawTexturePro(textura, origem, destino, (Vector2){0, 0}, 0.0f, WHITE);

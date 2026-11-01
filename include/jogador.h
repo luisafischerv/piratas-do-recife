@@ -10,7 +10,12 @@ typedef struct Jogador {
     Texture2D texturaCorrida;
     Texture2D texturaParado;
     Texture2D texturaSalto;
+    Texture2D texturaSaltoDiagonal;
+    bool saltoDiagonal;
     float tempoAnimacao;
+    float preparoSalto;
+    float tempoNoAr;
+    float tempoPouso;
     int quadroAtual;
     bool andando;
     int direcao;           
