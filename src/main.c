@@ -25,6 +25,7 @@ int main(void)
         EndDrawing();
     }
 
+    DescarregarJogador(&nico);
     CloseWindow();
     return 0;
 }
