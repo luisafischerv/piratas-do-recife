@@ -1,4 +1,0 @@
-# Copie este arquivo como config.mk e ajuste os caminhos para sua instalação.
-# Não versione config.mk: cada computador pode ter a Raylib em outro lugar.
-CC = C:/raylib/w64devkit/bin/gcc.exe
-RAYLIB_DIR = C:/raylib/raylib/src

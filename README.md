@@ -84,13 +84,11 @@ O arquivo do ranking é criado automaticamente na primeira vitória e não deve 
 
 ## Como compilar e executar
 
-Pré-requisitos: GNU Make, compilador C e Raylib instalada. Os detalhes específicos de cada computador ficam em `config.mk`, que não é versionado.
+Pré-requisitos: GNU Make, compilador C e Raylib instalada. Na raiz do projeto, use `make` para compilar ou `make run` para compilar e executar. Use `make clean` para apagar os arquivos compilados.
 
-1. Copie `config.mk.example` para `config.mk` e ajuste `CC` e `RAYLIB_DIR` para a instalação local. Se `gcc` e `pkg-config raylib` já estiverem configurados no sistema, o arquivo local pode ser dispensado.
-2. Na raiz do projeto, compile com `make`.
-3. Execute com `make run`.
+O Makefile procura a Raylib via `pkg-config`. No Windows, se ela não for encontrada assim, também procura a instalação padrão em `C:/raylib/raylib/src` e o GCC do w64devkit em `C:/raylib/w64devkit/bin`. Esses caminhos são apenas uma tentativa automática, não uma exigência para todos os computadores.
 
-Para limpar os arquivos compilados, use `make clean`. O Makefile usa `pkg-config` quando disponível e aceita `RAYLIB_DIR` para instalações locais. No macOS, configure também `RAYLIB_LIBS` em `config.mk` com as dependências/frameworks da Raylib instalados no computador.
+Se a instalação estiver em outro lugar, configure a Raylib para ser encontrada pelo `pkg-config`. Outra opção é informar o caminho diretamente no comando, por exemplo `make run RAYLIB_DIR=C:/caminho/para/raylib/src`. O compilador e a biblioteca Raylib devem ser compatíveis entre si. No macOS, prefira uma instalação que forneça `pkg-config` com as bibliotecas e frameworks necessários.
 
 No Windows com MSYS2, se o PowerShell não reconhecer `make`, adicione `C:\msys64\usr\bin` ao PATH do usuário e abra um novo terminal. No w64devkit, use o GNU Make fornecido com a distribuição ou adicione sua pasta `bin` ao PATH.
 

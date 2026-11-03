@@ -1,8 +1,5 @@
 .DEFAULT_GOAL := all
 
--include config.mk
-
-CC      = gcc
 TARGET  ?= piratas
 BUILD   ?= build
 SRC_DIR ?= src
@@ -15,11 +12,32 @@ SOURCES := $(wildcard $(SRC_DIR)/*.c)
 OBJECTS := $(patsubst $(SRC_DIR)/%.c,$(BUILD)/%.o,$(SOURCES))
 DEPS    := $(OBJECTS:.o=.d)
 
-# Use RAYLIB_DIR for a local installation, or pkg-config when available.
+ifeq ($(strip $(RAYLIB_DIR)),)
+RAYLIB_PKG := $(shell pkg-config --exists raylib 2>/dev/null && echo yes)
+ifeq ($(RAYLIB_PKG),)
+ifeq ($(OS),Windows_NT)
+ifneq ($(wildcard C:/raylib/raylib/src/raylib.h),)
+ifneq ($(wildcard C:/raylib/raylib/src/libraylib.a),)
+RAYLIB_DIR := C:/raylib/raylib/src
+ifeq ($(origin CC),default)
+ifneq ($(wildcard C:/raylib/w64devkit/bin/gcc.exe),)
+CC := C:/raylib/w64devkit/bin/gcc.exe
+endif
+endif
+endif
+endif
+endif
+endif
+endif
+
+ifeq ($(origin CC),default)
+CC := gcc
+endif
+
 ifneq ($(strip $(RAYLIB_DIR)),)
 CPPFLAGS += -I"$(RAYLIB_DIR)"
 LDLIBS   += -L"$(RAYLIB_DIR)" -lraylib
-else
+else ifeq ($(RAYLIB_PKG),yes)
 CPPFLAGS += $(shell pkg-config --cflags raylib 2>/dev/null)
 LDLIBS   += $(shell pkg-config --libs raylib 2>/dev/null)
 endif
