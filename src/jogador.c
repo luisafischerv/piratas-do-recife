@@ -6,13 +6,8 @@
 
 // Dimensoes de desenho, independentes do retangulo de colisao.
 // Corrida e repouso crescem juntos para conservar a proporcao ja aprovada.
-<<<<<<< HEAD
 #define ALTURA_VISUAL_SALTO    150.0f
-#define ESCALA_VISUAL_CHAO     (150.0f / 120.0f)
-=======
-#define ALTURA_VISUAL_SALTO    140.0f
-#define ESCALA_VISUAL_CHAO     (150.0f / 120.0f)
->>>>>>> 7653a221ab081b073fd243b1d80409253ea6bca4
+#define ESCALA_VISUAL_CHAO     (140.0f / 120.0f)
 #define ALTURA_VISUAL_CORRIDA  (120.0f * ESCALA_VISUAL_CHAO)
 #define ALTURA_VISUAL_REPOUSO  (128.0f * ESCALA_VISUAL_CHAO)
 
