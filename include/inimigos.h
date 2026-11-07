@@ -28,6 +28,7 @@ typedef struct Inimigo {
     float timerEstado; // quanto tempo falta no estado atual
     float limiteEsquerdo;
     float limiteDireito;
+    bool golpeJaAcertou;   // o golpe atual ja tirou saude do Nico?
 } Inimigo;
 
 typedef struct NoInimigo {
@@ -47,6 +48,8 @@ void InicializarLista(ListaInimigos *lista);
 NoInimigo *InserirInimigo(ListaInimigos *lista, Inimigo dados);
 void RemoverInimigo(ListaInimigos *lista, NoInimigo *no);
 void LiberarInimigos(ListaInimigos *lista);
+
+
 
 
 #endif
