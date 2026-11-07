@@ -44,7 +44,9 @@ typedef struct ListaInimigos {
 
 
 void InicializarLista(ListaInimigos *lista);
-
+NoInimigo *InserirInimigo(ListaInimigos *lista, Inimigo dados);
+void RemoverInimigo(ListaInimigos *lista, NoInimigo *no);
+void LiberarInimigos(ListaInimigos *lista);
 
 
 #endif
