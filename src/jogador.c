@@ -4,6 +4,10 @@
 #define FORCA_SALTO            520.0f
 #define GRAVIDADE              1300.0f
 
+
+#define LARGURA_CORPO          56.0f
+#define ALTURA_CORPO           80.0f
+
 // Dimensoes de desenho, independentes do retangulo de colisao.
 // Corrida e repouso crescem juntos para conservar a proporcao ja aprovada.
 #define ALTURA_VISUAL_SALTO    150.0f
@@ -13,7 +17,7 @@
 
 void InicializarJogador(Jogador *jogador)
 {
-    jogador->corpo = (Rectangle){ 100.0f, 400.0f, 48.0f, 64.0f };
+    jogador->corpo = (Rectangle){ 100.0f, 400.0f, LARGURA_CORPO, ALTURA_CORPO };
     jogador->velocidadeY = 0.0f;
     jogador->estaNoChao = false;
     jogador->direcao = 1;
