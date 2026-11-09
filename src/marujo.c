@@ -6,15 +6,15 @@
 #define MARUJO_LARGURA  44.0f
 #define MARUJO_ALTURA   64.0f
 #define MARUJO_SAUDE    3
-#define MARUJO_VEL_PATRULHA      60.0f   // px por segundo
-#define MARUJO_VEL_APROXIMACAO   110.0f
+#define MARUJO_VEL_PATRULHA      70.0f   // px por segundo
+#define MARUJO_VEL_APROXIMACAO   125.0f
 #define MARUJO_PERCEPCAO         260.0f  // distancia em que nota o Nico
 #define MARUJO_DESISTENCIA       340.0f  // se o Nico passar disso, volta a patrulhar
 #define MARUJO_DIF_ALTURA_MAX    90.0f   // ignora o Nico muito acima ou abaixo
 #define MARUJO_ALCANCE_GOLPE     36.0f
 #define MARUJO_TEMPO_PREPARACAO  0.45f   // segundos de aviso antes do golpe
 #define MARUJO_TEMPO_ATAQUE      0.15f   // segundos em que o golpe causa dano
-#define MARUJO_TEMPO_RECUPERACAO 0.60f   // brecha para o jogador contra-atacar
+#define MARUJO_TEMPO_RECUPERACAO 0.50f   // brecha para o jogador contra-atacar
 #define MARUJO_DANO              1
 
 Inimigo CriarMarujo(float x, float chaoY, float limiteEsquerdo, float limiteDireito)
