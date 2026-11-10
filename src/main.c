@@ -1,4 +1,5 @@
 #include "jogador.h"
+#include "fase.h"
 
 int main(void)
 {
@@ -7,6 +8,8 @@ int main(void)
 
     Jogador nico;
     InicializarJogador(&nico);
+    Fase fase;
+    CarregarFase(&fase, 1);
 
     while (!WindowShouldClose()) {
         const float dt = GetFrameTime();
@@ -16,8 +19,7 @@ int main(void)
         BeginDrawing();
         ClearBackground((Color){ 16, 43, 58, 255 });
 
-        const int chaoY = GetScreenHeight() - 100;
-        DrawRectangle(0, chaoY, GetScreenWidth(), 100, DARKGRAY);
+        DesenharFase(&fase);
         DrawText("A / D: mover     ESPACO: pular     ESC: sair", 24, 24, 22, RAYWHITE);
 
         DesenharJogador(&nico);
