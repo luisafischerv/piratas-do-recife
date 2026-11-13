@@ -11,6 +11,8 @@ typedef struct Jogador {
     Texture2D texturaParado;
     Texture2D texturaSalto;
     Texture2D texturaSaltoDiagonal;
+    Texture2D texturaAtaque;
+    float tempoAtaqueVisual;
     bool saltoDiagonal;
     float tempoAnimacao;
     float preparoSalto;
@@ -23,6 +25,7 @@ typedef struct Jogador {
 
 void InicializarJogador(Jogador *jogador);
 void AtualizarJogador(Jogador *jogador, float dt);
+void IniciarAnimacaoAtaque(Jogador *jogador);
 void DescarregarJogador(Jogador *jogador);
 void DesenharJogador(const Jogador *jogador);
 

@@ -28,7 +28,8 @@ int main(void)
         Rectangle anterior = nico.corpo;
         AtualizarJogador(&nico, dt);
         ResolverColisoesCenario(&nico, &fase, anterior);
-        AtualizarAtaqueEspada(&espada, IsMouseButtonPressed(MOUSE_BUTTON_LEFT), dt);
+        if (AtualizarAtaqueEspada(&espada, IsMouseButtonPressed(MOUSE_BUTTON_LEFT), dt))
+            IniciarAnimacaoAtaque(&nico);
         VerificarAcertosEspada(&espada, &nico, &inimigos);
         AtualizarInimigos(&inimigos, &nico, dt);
 
@@ -40,7 +41,6 @@ int main(void)
 
         DesenharInimigos(&inimigos);
         DesenharJogador(&nico);
-        DesenharEspada(&espada, &nico);
 
         EndDrawing();
     }

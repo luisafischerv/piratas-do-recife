@@ -14,6 +14,7 @@
 #define ESCALA_VISUAL_CHAO     (140.0f / 120.0f)
 #define ALTURA_VISUAL_CORRIDA  (120.0f * ESCALA_VISUAL_CHAO)
 #define ALTURA_VISUAL_REPOUSO  (128.0f * ESCALA_VISUAL_CHAO)
+#define DURACAO_ANIMACAO_ATAQUE 0.60f
 
 void InicializarJogador(Jogador *jogador)
 {
@@ -25,6 +26,8 @@ void InicializarJogador(Jogador *jogador)
     jogador->texturaParado = LoadTexture("assets/images/nico/nico_parado_12_sheet.png");
     jogador->texturaSalto = LoadTexture("assets/images/nico/nico_salto_vertical_sheet.png");
     jogador->texturaSaltoDiagonal = LoadTexture("assets/images/nico/nico_salto_diagonal_sheet.png");
+    jogador->texturaAtaque = LoadTexture("assets/images/nico/nico_ataque_corpo.png");
+    jogador->tempoAtaqueVisual = 0.0f;
     jogador->saltoDiagonal = false;
     jogador->preparoSalto = 0.0f;
     jogador->tempoNoAr = 0.0f;
@@ -36,6 +39,12 @@ void InicializarJogador(Jogador *jogador)
     if (jogador->texturaParado.id) SetTextureFilter(jogador->texturaParado, TEXTURE_FILTER_BILINEAR);
     if (jogador->texturaSalto.id) SetTextureFilter(jogador->texturaSalto, TEXTURE_FILTER_BILINEAR);
     if (jogador->texturaSaltoDiagonal.id) SetTextureFilter(jogador->texturaSaltoDiagonal, TEXTURE_FILTER_BILINEAR);
+    if (jogador->texturaAtaque.id) SetTextureFilter(jogador->texturaAtaque, TEXTURE_FILTER_BILINEAR);
+}
+
+void IniciarAnimacaoAtaque(Jogador *jogador)
+{
+    jogador->tempoAtaqueVisual = DURACAO_ANIMACAO_ATAQUE;
 }
 
 void AtualizarJogador(Jogador *jogador, float dt)
@@ -43,6 +52,7 @@ void AtualizarJogador(Jogador *jogador, float dt)
     bool estavaAndando = jogador->andando;
     bool estavaNoChao = jogador->estaNoChao;
     float movimentoX = 0.0f;
+    if (jogador->tempoAtaqueVisual > 0.0f) jogador->tempoAtaqueVisual -= dt;
 
     if (jogador->estaNoChao && jogador->tempoNoAr > 0.0f) {
         jogador->tempoPouso = 0.1f;
@@ -111,12 +121,31 @@ void DescarregarJogador(Jogador *jogador)
     if (jogador->texturaParado.id) UnloadTexture(jogador->texturaParado);
     if (jogador->texturaSalto.id) UnloadTexture(jogador->texturaSalto);
     if (jogador->texturaSaltoDiagonal.id) UnloadTexture(jogador->texturaSaltoDiagonal);
+    if (jogador->texturaAtaque.id) UnloadTexture(jogador->texturaAtaque);
+    jogador->texturaAtaque.id = 0;
     jogador->texturaSaltoDiagonal.id = 0;
     jogador->texturaCorrida.id = jogador->texturaParado.id = jogador->texturaSalto.id = 0;
 }
 
 void DesenharJogador(const Jogador *jogador)
 {
+    if (jogador->tempoAtaqueVisual > 0.0f && jogador->texturaAtaque.id) {
+        Texture2D textura = jogador->texturaAtaque;
+        float largura = (float)textura.width / 4.0f;
+        float altura = (float)textura.height / 3.0f;
+        int quadro = (int)((1.0f - jogador->tempoAtaqueVisual / DURACAO_ANIMACAO_ATAQUE) * 12.0f);
+        if (quadro < 0) quadro = 0;
+        if (quadro > 11) quadro = 11;
+        Rectangle origem = { (quadro % 4) * largura, (quadro / 4) * altura,
+                             largura * jogador->direcao, altura };
+        float alturaVisual = ALTURA_VISUAL_REPOUSO;
+        float larguraVisual = alturaVisual * largura / altura;
+        Rectangle destino = { jogador->corpo.x + jogador->corpo.width / 2.0f - larguraVisual / 2.0f,
+                              jogador->corpo.y + jogador->corpo.height - alturaVisual * 0.94f,
+                              larguraVisual, alturaVisual };
+        DrawTexturePro(textura, origem, destino, (Vector2){0, 0}, 0.0f, WHITE);
+        return;
+    }
     bool saltando = !jogador->estaNoChao || jogador->preparoSalto > 0.0f || jogador->tempoPouso > 0.0f;
     bool correndo = jogador->andando && jogador->estaNoChao;
     Texture2D texturaSalto = jogador->saltoDiagonal && jogador->texturaSaltoDiagonal.id ?

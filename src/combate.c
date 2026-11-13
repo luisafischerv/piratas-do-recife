@@ -3,7 +3,7 @@
 
 // Valores EXPERIMENTAIS
 #define ESPADA_TEMPO_ATIVO   0.15f  // segundos em que a area causa dano
-#define ESPADA_TEMPO_RECARGA 0.30f  // intervalo minimo entre dois golpes
+#define ESPADA_TEMPO_RECARGA 0.60f  // acompanha a duracao da animacao
 #define ESPADA_ALCANCE       70.0f  // largura da area a frente do Nico
 #define ESPADA_DANO          1
 #define TEMPO_PISCA_DANO     0.15f  // inimigo pisca branco depois do acerto
