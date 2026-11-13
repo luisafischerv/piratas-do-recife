@@ -29,9 +29,16 @@ bool CarregarFase(Fase *f, int id){
     return false;
 }
 
-void DesenharFase(const Fase *f){
+void DesenharFase(const Fase *f) {
     for (int i = 0; i < f->qtdPlataformas; i++) {
         const Plataforma *p = &f->plataformas[i];
-        if (p->ativa) DrawRectangleRec(p->area, (Color){ 92, 84, 78, 255 });
+        if (!p->ativa) continue;
+
+        Color cor = (Color){ 92, 84, 78, 255 };
+        if (p->tipo == PLAT_CAIXA) cor = (Color){ 150, 98, 52, 255 };
+        if (p->tipo == PLAT_FIXA)  cor = (Color){ 176, 124, 70, 255 };
+
+        DrawRectangleRec(p->area, cor);
+        DrawRectangleLinesEx(p->area, 2.0f, (Color){ 60, 40, 24, 255 });
     }
 }
