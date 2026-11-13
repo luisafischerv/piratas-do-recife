@@ -21,6 +21,13 @@ void ResolverColisoesCenario(Jogador *j, const Fase *f, Rectangle anterior) {
             j->corpo.y = p.y - j->corpo.height;
             if (j->velocidadeY > 0.0f) j->velocidadeY = 0.0f;
             j->estaNoChao = true;
+        } else if (anterior.y >= p.y + p.height - TOLERANCIA) {
+            j->corpo.y = p.y + p.height;
+            if (j->velocidadeY < 0.0f) j->velocidadeY = 0.0f;
+        } else if (anterior.x + anterior.width <= p.x + TOLERANCIA) {
+            j->corpo.x = p.x - j->corpo.width;
+        } else if (anterior.x >= p.x + p.width - TOLERANCIA) {
+            j->corpo.x = p.x + p.width;
         }
     }
 }

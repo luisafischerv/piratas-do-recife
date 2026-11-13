@@ -20,6 +20,10 @@ bool CarregarFase(Fase *f, int id){
     if (id == 1) {
         f->largura = 1280.0f;
         AdicionarPlataforma(f, 0.0f, CHAO_Y, 1280.0f, 100.0f, PLAT_CHAO);
+        AdicionarPlataforma(f, 300.0f, CHAO_Y - 60.0f, 60.0f, 60.0f, PLAT_CAIXA);
+        AdicionarPlataforma(f, 860.0f, CHAO_Y - 60.0f, 60.0f, 60.0f, PLAT_CAIXA);
+        AdicionarPlataforma(f, 400.0f, CHAO_Y - 140.0f, 200.0f, 20.0f, PLAT_FIXA);
+        AdicionarPlataforma(f, 960.0f, CHAO_Y - 140.0f, 180.0f, 20.0f, PLAT_FIXA);
         return true;
     }
     return false;
