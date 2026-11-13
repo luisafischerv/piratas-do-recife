@@ -9,6 +9,7 @@ int main(void)
 {
     InitWindow(1280, 720, "Piratas do Recife: A Maldicao da Mare Negra");
     SetTargetFPS(60);
+    CarregarVisualInimigos();
 
     Jogador nico;
     InicializarJogador(&nico);
@@ -46,6 +47,7 @@ int main(void)
     }
 
     LiberarInimigos(&inimigos);
+    DescarregarVisualInimigos();
     DescarregarJogador(&nico);
     CloseWindow();
     return 0;
