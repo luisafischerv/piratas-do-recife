@@ -1,5 +1,6 @@
 #include "jogador.h"
 #include "fase.h"
+#include "colisao.h"
 
 int main(void)
 {
@@ -12,9 +13,12 @@ int main(void)
     CarregarFase(&fase, 1);
 
     while (!WindowShouldClose()) {
-        const float dt = GetFrameTime();
+        float dt = GetFrameTime();
+        if (dt > 1.0f / 30.0f) dt = 1.0f / 30.0f;
 
+        Rectangle anterior = nico.corpo;
         AtualizarJogador(&nico, dt);
+        ResolverColisoesCenario(&nico, &fase, anterior);
 
         BeginDrawing();
         ClearBackground((Color){ 16, 43, 58, 255 });

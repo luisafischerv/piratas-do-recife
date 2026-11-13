@@ -43,6 +43,12 @@ void AtualizarJogador(Jogador *jogador, float dt)
     bool estavaAndando = jogador->andando;
     bool estavaNoChao = jogador->estaNoChao;
     float movimentoX = 0.0f;
+
+    if (jogador->estaNoChao && jogador->tempoNoAr > 0.0f) {
+        jogador->tempoPouso = 0.1f;
+        jogador->tempoNoAr = 0.0f;
+    }
+
     if (jogador->tempoPouso > 0.0f) jogador->tempoPouso -= dt;
     if (jogador->preparoSalto > 0.0f) {
         jogador->preparoSalto -= dt;
@@ -73,15 +79,7 @@ void AtualizarJogador(Jogador *jogador, float dt)
     jogador->velocidadeY += GRAVIDADE * dt;
     jogador->corpo.y += jogador->velocidadeY * dt;
 
-    const float chaoY = (float)GetScreenHeight() - 100.0f;
-    bool estavaNoAr = !jogador->estaNoChao;
-    if (estavaNoAr) jogador->tempoNoAr += dt;
-    if (jogador->corpo.y + jogador->corpo.height >= chaoY) {
-        jogador->corpo.y = chaoY - jogador->corpo.height;
-        jogador->velocidadeY = 0.0f;
-        jogador->estaNoChao = true;
-        if (estavaNoAr) jogador->tempoPouso = 0.1f;
-    }
+    if (!jogador->estaNoChao) jogador->tempoNoAr += dt;
 
     if (jogador->corpo.x < 0.0f) jogador->corpo.x = 0.0f;
     if (jogador->corpo.x + jogador->corpo.width > GetScreenWidth()) {
