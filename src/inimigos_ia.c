@@ -35,6 +35,7 @@ int AtualizarInimigos(ListaInimigos *lista, const Jogador *jogador, float dt)
         if (inimigo->saude <= 0) {
             RemoverInimigo(lista, atual);
         } else {
+            if (inimigo->tempoDano > 0.0f) inimigo->tempoDano -= dt;
             switch (inimigo->tipo) {
             case INIMIGO_MARUJO:
                 danoTotal += AtualizarMarujo(inimigo, jogador, dt);
