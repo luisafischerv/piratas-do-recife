@@ -6,6 +6,7 @@ static void DesenharMarujo(const Inimigo *m)
 {
     Color cor = MAROON;
     if (m->estado == ESTADO_PREPARACAO) cor = ORANGE;
+    if (m->tempoDano > 0.0f) cor = RAYWHITE; // pisca branco ao levar golpe da espada
     DrawRectangleRec(m->corpo, cor);
     float olhoX = (m->direcao > 0) ? m->corpo.x + m->corpo.width - 12
                                    : m->corpo.x + 4;
