@@ -1,5 +1,6 @@
 #ifndef MARUJO_H
 #define MARUJO_H
+#define MARUJO_SAUDE 3
 
 #include "inimigos.h"
 #include "jogador.h"
