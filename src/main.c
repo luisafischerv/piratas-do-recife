@@ -23,6 +23,21 @@ static void CriarMarujosDoCais(ListaInimigos *inimigos){
     InserirInimigo(inimigos, CriarMarujo(1050.0f, 620.0f, 920.0f, 1280.0f));
 }
 
+static void DesenharTelaInicial(void) {
+
+    const char *titulo = "Piratas do Recife";
+    const char *subtitulo = "A Maldição da Maré Negra";
+    const char *dica = "Pressione Enter para jogar";
+    int centroX = GetScreenWidth() / 2;
+    int centroY = GetScreenHeight() / 2;
+
+    DrawText(titulo, centroX - MeasureText(titulo, 56) / 2,
+             centroY - 100, 56, GOLD);
+    DrawText(subtitulo, centroX - MeasureText(subtitulo, 30) / 2,
+             centroY - 32, 30, RAYWHITE);
+    DrawText(dica, centroX - MeasureText(dica, 24) / 2,
+             centroY + 55, 24, RAYWHITE);
+}
 
 int main(void)
 {
@@ -46,8 +61,22 @@ int main(void)
     float tempoProtecao = 0.0f;
     bool pausado = false;
     double tempoTotal = 0.0;
+    bool naTelaInicial = true;
 
     while (!WindowShouldClose()) {
+
+        if (naTelaInicial) {
+            if (IsKeyPressed(KEY_ENTER)) {
+                naTelaInicial = false;
+            }
+
+            BeginDrawing();
+            ClearBackground((Color){ 16, 43, 58, 255 });
+            DesenharTelaInicial();
+            EndDrawing();
+            continue;
+        }
+
         float tempoQuadro = GetFrameTime();
 
         if (IsKeyPressed(KEY_ESCAPE)) {
