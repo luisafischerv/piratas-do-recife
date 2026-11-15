@@ -6,13 +6,14 @@
 #define VELOCIDADE_TIRO 550.0f
 #define AVISO_ATIRADOR 0.8f
 #define RECARGA_ATIRADOR 1.5f
+#define VELOCIDADE_ATIRADOR 30.0f
 
 static bool Disparar(SistemaTiros *s, Rectangle corpo, int direcao, bool jogador)
 {
     for (int i = 0; i < MAX_TIROS; i++) {
         if (s->tiros[i].ativo) continue;
         float x = direcao > 0 ? corpo.x + corpo.width : corpo.x - 12.0f;
-        s->tiros[i] = (Tiro){ {x, corpo.y + corpo.height * 0.45f, 12.0f, 8.0f},
+        s->tiros[i] = (Tiro){ {x, corpo.y + corpo.height * ALTURA_TIRO_RELATIVA, 12.0f, 8.0f},
                               direcao * VELOCIDADE_TIRO, true, jogador };
         return true;
     }
@@ -37,6 +38,8 @@ Inimigo CriarAtirador(float x, float chaoY)
     i.saude = 3;
     i.estado = ESTADO_RECUPERACAO;
     i.timerEstado = 0.8f;
+    i.limiteEsquerdo = x - 100.0f;
+    i.limiteDireito = x + 80.0f;
     return i;
 }
 
@@ -45,6 +48,7 @@ void AtualizarAtiradores(SistemaTiros *s, ListaInimigos *lista, const Jogador *j
     for (NoInimigo *no = lista->inicio; no; no = no->proximo) {
         Inimigo *i = &no->dados;
         if (i->tipo != INIMIGO_ATIRADOR || i->saude <= 0) continue;
+        i->caminhando = false;
         i->timerEstado -= dt;
         if (i->estado == ESTADO_PREPARACAO) {
             // A direcao fica fixa durante o aviso para permitir a esquiva.
@@ -61,6 +65,15 @@ void AtualizarAtiradores(SistemaTiros *s, ListaInimigos *lista, const Jogador *j
             i->estado = ESTADO_PREPARACAO;
             i->golpeJaAcertou = false;
             i->timerEstado = AVISO_ATIRADOR;
+        } else if (i->estado == ESTADO_RECUPERACAO &&
+                   (!i->golpeJaAcertou || i->timerEstado <= 0.9f)) {
+            // Patrulha curta entre tiros; para durante o aviso e o recuo.
+            float xAnterior = i->corpo.x;
+            MoverInimigoNosLimites(i, i->direcao * VELOCIDADE_ATIRADOR * dt);
+            i->caminhando = i->corpo.x != xAnterior;
+            if (i->caminhando) i->tempoCaminhada += dt;
+            if (i->corpo.x <= i->limiteEsquerdo) i->direcao = 1;
+            if (i->corpo.x + i->corpo.width >= i->limiteDireito) i->direcao = -1;
         }
     }
 }
@@ -111,9 +124,3 @@ int AtualizarTiros(SistemaTiros *s, const Fase *fase, ListaInimigos *lista, cons
     return dano;
 }
 
-void DesenharTiros(const SistemaTiros *s)
-{
-    for (int i = 0; i < MAX_TIROS; i++)
-        if (s->tiros[i].ativo)
-            DrawRectangleRec(s->tiros[i].area, s->tiros[i].doJogador ? GOLD : RED);
-}

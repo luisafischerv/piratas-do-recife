@@ -2,11 +2,13 @@
 #include "inimigos_ia.h"
 #include "marujo.h"
 #include "interface.h"
+#include "tiros.h"
 
 static Texture2D texturaMarujo;
 static Texture2D texturaAndar;
 static Texture2D texturaAtaque;
 static Texture2D texturaAtirador;
+static Texture2D texturaAtiradorAndar;
 
 void CarregarVisualInimigos(void)
 {
@@ -14,10 +16,12 @@ void CarregarVisualInimigos(void)
     texturaAndar = LoadTexture("assets/images/marujo/marujo_andar.png");
     texturaAtaque = LoadTexture("assets/images/marujo/marujo_ataque.png");
     texturaAtirador = LoadTexture("assets/images/atirador/atirador_sheet.png");
+    texturaAtiradorAndar = LoadTexture("assets/images/atirador/atirador_andar.png");
     if (texturaMarujo.id) SetTextureFilter(texturaMarujo, TEXTURE_FILTER_BILINEAR);
     if (texturaAndar.id) SetTextureFilter(texturaAndar, TEXTURE_FILTER_BILINEAR);
     if (texturaAtaque.id) SetTextureFilter(texturaAtaque, TEXTURE_FILTER_BILINEAR);
     if (texturaAtirador.id) SetTextureFilter(texturaAtirador, TEXTURE_FILTER_BILINEAR);
+    if (texturaAtiradorAndar.id) SetTextureFilter(texturaAtiradorAndar, TEXTURE_FILTER_BILINEAR);
 }
 
 void DescarregarVisualInimigos(void)
@@ -26,9 +30,11 @@ void DescarregarVisualInimigos(void)
     if (texturaAndar.id) UnloadTexture(texturaAndar);
     if (texturaAtaque.id) UnloadTexture(texturaAtaque);
     if (texturaAtirador.id) UnloadTexture(texturaAtirador);
+    if (texturaAtiradorAndar.id) UnloadTexture(texturaAtiradorAndar);
     texturaMarujo.id = 0;
     texturaAndar.id = texturaAtaque.id = 0;
     texturaAtirador.id = 0;
+    texturaAtiradorAndar.id = 0;
 }
 
 static void DesenharMarujo(const Inimigo *m)
@@ -101,6 +107,7 @@ void DesenharInimigos(const ListaInimigos *lista)
             if (texturaAtirador.id) {
                 const Inimigo *at = &no->dados;
                 int quadro = 0;
+                Texture2D textura = texturaAtirador;
                 if (at->estado == ESTADO_PREPARACAO) {
                     quadro = (int)((0.8f - at->timerEstado) * 5.0f);
                     if (quadro < 0) quadro = 0;
@@ -111,22 +118,26 @@ void DesenharInimigos(const ListaInimigos *lista)
                     else if (at->timerEstado > 0.9f) quadro = 6;
                     else quadro = 7;
                 }
-                float w = (float)texturaAtirador.width / 4.0f;
-                float h = (float)texturaAtirador.height / 2.0f;
+                if (at->caminhando && texturaAtiradorAndar.id) {
+                    textura = texturaAtiradorAndar;
+                    quadro = (int)(at->tempoCaminhada * 6.0f) % 8;
+                }
+                float w = (float)textura.width / 4.0f;
+                float h = (float)textura.height / 2.0f;
                 Rectangle origem = { (quadro % 4) * w, (quadro / 4) * h,
                                      at->direcao > 0 ? -w : w, h };
                 float altura = 140.0f, largura = altura * w / h;
                 Rectangle destino = { at->corpo.x + at->corpo.width / 2.0f - largura / 2.0f,
                                       at->corpo.y + at->corpo.height - altura * 0.96f,
                                       largura, altura };
-                DrawTexturePro(texturaAtirador, origem, destino, (Vector2){0, 0}, 0.0f,
+                DrawTexturePro(textura, origem, destino, (Vector2){0, 0}, 0.0f,
                                at->tempoDano > 0.0f ? RED : WHITE);
             } else {
                 DrawRectangleRec(no->dados.corpo, no->dados.tempoDano > 0 ? WHITE : DARKPURPLE);
             }
             if (no->dados.estado == ESTADO_PREPARACAO) {
                 DrawText("!", (int)no->dados.corpo.x + 14, (int)no->dados.corpo.y - 32, 28, ORANGE);
-                float y = no->dados.corpo.y + no->dados.corpo.height * 0.45f + 4.0f;
+                float y = no->dados.corpo.y + no->dados.corpo.height * ALTURA_TIRO_RELATIVA + 4.0f;
                 float x = no->dados.direcao > 0 ? no->dados.corpo.x + no->dados.corpo.width : no->dados.corpo.x;
                 DrawLineEx((Vector2){x, y}, (Vector2){x + no->dados.direcao * 100.0f, y}, 2.0f, ORANGE);
             }

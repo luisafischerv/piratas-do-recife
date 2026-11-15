@@ -5,6 +5,7 @@
 #include "inimigos.h"
 
 #define MAX_TIROS 64
+#define ALTURA_TIRO_RELATIVA 0.35f
 
 typedef struct Tiro {
     Rectangle area;
@@ -23,6 +24,8 @@ void AtualizarPistola(SistemaTiros *sistema, const Jogador *jogador, bool pressi
 void AtualizarAtiradores(SistemaTiros *sistema, ListaInimigos *inimigos, const Jogador *jogador, float dt);
 int AtualizarTiros(SistemaTiros *sistema, const Fase *fase, ListaInimigos *inimigos, const Jogador *jogador, float dt);
 void DesenharTiros(const SistemaTiros *sistema);
+void CarregarVisualTiros(void);
+void DescarregarVisualTiros(void);
 Inimigo CriarAtirador(float x, float chaoY);
 
 #endif

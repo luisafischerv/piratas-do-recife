@@ -92,6 +92,7 @@ int main(void)
     SetExitKey(KEY_NULL);
     Texture2D fundoInicial = LoadTexture("assets/images/tela_inicial.png");
     CarregarVisualInimigos();
+    CarregarVisualTiros();
 
     Jogador nico;
     InicializarJogador(&nico);
@@ -221,6 +222,7 @@ int main(void)
 
     LiberarInimigos(&inimigos);
     DescarregarVisualInimigos();
+    DescarregarVisualTiros();
     DescarregarJogador(&nico);
     if (fundoInicial.id != 0) {
         UnloadTexture(fundoInicial);

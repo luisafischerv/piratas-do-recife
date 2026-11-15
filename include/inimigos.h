@@ -31,6 +31,8 @@ typedef struct Inimigo {
     bool golpeJaAcertou;   // o golpe atual ja tirou saude do Nico?
     int ultimoGolpeRecebido; // idGolpe da espada que acertou por ultimo (0 = nenhum)
     float tempoDano;         // tempo restante piscando branco depois de levar golpe
+    float tempoCaminhada;
+    bool caminhando;
 } Inimigo;
 
 typedef struct NoInimigo {

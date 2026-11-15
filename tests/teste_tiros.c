@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <math.h>
 #include <stdio.h>
 #include "tiros.h"
 
@@ -21,6 +22,7 @@ int main(void)
     InicializarLista(&lista);
     InicializarTiros(&s);
     AtualizarPistola(&s, &j, true, 0.01f);
+    assert(fabsf(s.tiros[0].area.y - (j.corpo.y + j.corpo.height * ALTURA_TIRO_RELATIVA)) < 0.01f);
     AtualizarPistola(&s, &j, true, 0.1f);
     assert(Contar(&s) == 1);
     AtualizarPistola(&s, &j, true, 0.3f);
@@ -49,6 +51,9 @@ int main(void)
     AtualizarAtiradores(&s, &lista, &j, 0.02f);
     assert(Contar(&s) == 1);
     assert(AtualizarTiros(&s, &fase, &lista, &j, 1.0f) == 1);
+    float xAposDisparo = alvo->dados.corpo.x;
+    AtualizarAtiradores(&s, &lista, &j, 0.8f);
+    assert(alvo->dados.corpo.x < xAposDisparo);
     LiberarInimigos(&lista);
     puts("Testes de tiros passaram.");
     return 0;
