@@ -55,6 +55,22 @@ static void CriarMarujosDoCais(ListaInimigos *inimigos){
     InserirInimigo(inimigos, atirador);
 }
 
+static void CriarInimigosDaFase(ListaInimigos *inimigos, int faseId)
+{
+    if (faseId == 1) {
+        CriarMarujosDoCais(inimigos);
+    } else if (faseId == 2) {
+        Inimigo marujo = CriarMarujo(850.0f, 620.0f, 500.0f, 1200.0f);
+        marujo.aguardaProximidade = true;
+        InserirInimigo(inimigos, marujo);
+        Inimigo atirador = CriarAtirador(2380.0f, 620.0f);
+        atirador.limiteEsquerdo = 2290.0f;
+        atirador.limiteDireito = 2560.0f;
+        atirador.aguardaProximidade = true;
+        InserirInimigo(inimigos, atirador);
+    }
+}
+
 static void AtivarInimigosProximos(ListaInimigos *inimigos, const Jogador *nico)
 {
     for (NoInimigo *no = inimigos->inicio; no; no = no->proximo) {
@@ -143,7 +159,7 @@ int main(void)
     camera.zoom = 1.0f;
     ListaInimigos inimigos;
     InicializarLista(&inimigos);
-    CriarMarujosDoCais(&inimigos);
+    CriarInimigosDaFase(&inimigos, fase.id);
     Espada espada;
     InicializarEspada(&espada);
     SistemaTiros tiros;
@@ -208,7 +224,9 @@ int main(void)
                 tempoProtecao -= dt;
             }
 
-            AtualizarPistola(&tiros, &nico, IsMouseButtonDown(MOUSE_BUTTON_RIGHT), dt);
+            if (AtualizarPistola(&tiros, &nico,
+                                 fase.id >= 2 && IsMouseButtonDown(MOUSE_BUTTON_RIGHT), dt))
+                IniciarAnimacaoTiro(&nico);
             AtualizarAtiradores(&tiros, &inimigos, &nico, dt);
             int danoRecebido = AtualizarTiros(&tiros, &fase, &inimigos, &nico, dt);
             // AtualizarInimigos remove cada inimigo derrotado uma unica vez.
@@ -223,6 +241,8 @@ int main(void)
 
             if (saudeNico <= 0 || nico.corpo.y > fase.limiteQueda) {
                 nico = nicoInicial;
+                nico.corpo.x = fase.pontoInicial.x;
+                nico.corpo.y = fase.pontoInicial.y;
                 saudeNico = SAUDE_MAXIMA;
                 tempoProtecao = 0.0f;
                 InicializarEspada(&espada);
@@ -230,7 +250,23 @@ int main(void)
 
                 LiberarInimigos(&inimigos);
                 InicializarLista(&inimigos);
-                CriarMarujosDoCais(&inimigos);
+                CriarInimigosDaFase(&inimigos, fase.id);
+            } else if (fase.id == 1 && CheckCollisionRecs(nico.corpo, fase.areaSaida)) {
+                Fase proxima = {0};
+                if (CarregarFase(&proxima, 2)) {
+                    DescarregarFase(&fase);
+                    fase = proxima;
+                    nico = nicoInicial;
+                    nico.corpo.x = fase.pontoInicial.x;
+                    nico.corpo.y = fase.pontoInicial.y;
+                    saudeNico = SAUDE_MAXIMA;
+                    tempoProtecao = 0.0f;
+                    InicializarEspada(&espada);
+                    InicializarTiros(&tiros);
+                    LiberarInimigos(&inimigos);
+                    InicializarLista(&inimigos);
+                    CriarInimigosDaFase(&inimigos, fase.id);
+                }
             }
         }
 
@@ -245,12 +281,19 @@ int main(void)
         camera.target = (Vector2){cameraX, 0.0f};
         BeginMode2D(camera);
         DesenharFase(&fase);
+        if (fase.id == 1)
+            DrawText("MANGUE >", 2400, 500, 20, GOLD);
         DesenharInimigos(&inimigos);
         DesenharTiros(&tiros);
         bool nicoVisivel = tempoProtecao <= 0.0f || (int)(tempoProtecao * 10.0f) % 2 == 0;
         if (nicoVisivel) DesenharJogador(&nico);
         EndMode2D();
-        DrawText("A/D: mover  ESPACO: pular  MOUSE ESQ: espada  DIR: pistola  ESC: pausar", 24, 24, 20, RAYWHITE);
+        DrawText(fase.id == 1 ?
+                 "A/D: mover  ESPACO: pular  MOUSE ESQ: espada  ESC: pausar" :
+                 "A/D: mover  ESPACO: pular  MOUSE ESQ: espada  DIR: pistola  ESC: pausar",
+                 24, 24, 20, RAYWHITE);
+        if (fase.id == 2 && nico.corpo.x < 500.0f)
+            DrawText("PISTOLA LIBERADA: segure o botao direito do mouse", 24, 130, 20, GOLD);
 
         for (int i = 0; i < SAUDE_MAXIMA; i++) {
             DesenharCoracao(24 + i * 40, 56, 4, i < saudeNico);

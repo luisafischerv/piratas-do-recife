@@ -32,6 +32,8 @@ bool CarregarFase(Fase *f, int id){
         if (f->cargas.id) SetTextureFilter(f->cargas, TEXTURE_FILTER_BILINEAR);
         f->largura = 2560.0f;
         f->limiteQueda = CHAO_Y + 200.0f;
+        f->pontoInicial = (Vector2){100.0f, 400.0f};
+        f->areaSaida = (Rectangle){2500.0f, 0.0f, 60.0f, CHAO_Y};
         AdicionarPlataforma(f, 0.0f, CHAO_Y, 1280.0f, 100.0f, PLAT_CHAO);
         AdicionarPlataforma(f, 1280.0f, CHAO_Y, 1280.0f, 100.0f, PLAT_CHAO);
         // Primeiro trecho: caixa de aprendizado e acesso a rota elevada opcional.
@@ -49,6 +51,32 @@ bool CarregarFase(Fase *f, int id){
         AdicionarPlataforma(f, 1600.0f, CHAO_Y - 140.0f, 260.0f, 20.0f, PLAT_FIXA);
         AdicionarPlataforma(f, 1950.0f, CHAO_Y - 185.0f, 170.0f, 20.0f, PLAT_FIXA);
         AdicionarPlataforma(f, 2050.0f, CHAO_Y - 60.0f, 60.0f, 60.0f, PLAT_CAIXA);
+        return true;
+    }
+    if (id == 2) {
+        f->fundo = LoadTexture("assets/images/cenarios/fase2/mangue_fundo_01.png");
+        f->fundo2 = LoadTexture("assets/images/cenarios/fase2/mangue_fundo_02.png");
+        if (!f->fundo.id || !f->fundo2.id) {
+            DescarregarFase(f);
+            return false;
+        }
+        SetTextureFilter(f->fundo, TEXTURE_FILTER_BILINEAR);
+        SetTextureFilter(f->fundo2, TEXTURE_FILTER_BILINEAR);
+        // Reutilizados provisoriamente ate criarmos as pecas do mangue.
+        f->chao = LoadTexture("assets/images/cenarios/cais_chao.png");
+        f->passarela = LoadTexture("assets/images/cenarios/cais_passarela.png");
+        if (f->chao.id) SetTextureFilter(f->chao, TEXTURE_FILTER_BILINEAR);
+        if (f->passarela.id) SetTextureFilter(f->passarela, TEXTURE_FILTER_BILINEAR);
+        f->largura = 2560.0f;
+        f->pontoInicial = (Vector2){100.0f, 400.0f};
+        f->limiteQueda = CHAO_Y + 200.0f;
+        AdicionarPlataforma(f, 0.0f, CHAO_Y, 1280.0f, 100.0f, PLAT_CHAO);
+        AdicionarPlataforma(f, 1280.0f, CHAO_Y, 370.0f, 100.0f, PLAT_CHAO);
+        AdicionarPlataforma(f, 1650.0f, CHAO_Y, 130.0f, 20.0f, PLAT_FIXA);
+        AdicionarPlataforma(f, 1830.0f, CHAO_Y, 130.0f, 20.0f, PLAT_FIXA);
+        AdicionarPlataforma(f, 2010.0f, CHAO_Y, 130.0f, 20.0f, PLAT_FIXA);
+        AdicionarPlataforma(f, 2190.0f, CHAO_Y, 100.0f, 20.0f, PLAT_FIXA);
+        AdicionarPlataforma(f, 2290.0f, CHAO_Y, 270.0f, 100.0f, PLAT_CHAO);
         return true;
     }
     return false;

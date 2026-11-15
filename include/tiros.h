@@ -20,7 +20,7 @@ typedef struct SistemaTiros {
 } SistemaTiros;
 
 void InicializarTiros(SistemaTiros *sistema);
-void AtualizarPistola(SistemaTiros *sistema, const Jogador *jogador, bool pressionado, float dt);
+bool AtualizarPistola(SistemaTiros *sistema, const Jogador *jogador, bool pressionado, float dt);
 void AtualizarAtiradores(SistemaTiros *sistema, ListaInimigos *inimigos, const Jogador *jogador, float dt);
 int AtualizarTiros(SistemaTiros *sistema, const Fase *fase, ListaInimigos *inimigos, const Jogador *jogador, float dt);
 void DesenharTiros(const SistemaTiros *sistema);

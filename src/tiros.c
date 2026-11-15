@@ -22,11 +22,14 @@ static bool Disparar(SistemaTiros *s, Rectangle corpo, int direcao, bool jogador
 
 void InicializarTiros(SistemaTiros *s) { *s = (SistemaTiros){0}; }
 
-void AtualizarPistola(SistemaTiros *s, const Jogador *j, bool pressionado, float dt)
+bool AtualizarPistola(SistemaTiros *s, const Jogador *j, bool pressionado, float dt)
 {
     if (s->recarga > 0.0f) s->recarga -= dt;
-    if (pressionado && s->recarga <= 0.0f && Disparar(s, j->corpo, j->direcao, true))
+    if (pressionado && s->recarga <= 0.0f && Disparar(s, j->corpo, j->direcao, true)) {
         s->recarga = INTERVALO_PISTOLA;
+        return true;
+    }
+    return false;
 }
 
 Inimigo CriarAtirador(float x, float chaoY)

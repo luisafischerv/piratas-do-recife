@@ -15,6 +15,7 @@
 #define ALTURA_VISUAL_CORRIDA  (120.0f * ESCALA_VISUAL_CHAO)
 #define ALTURA_VISUAL_REPOUSO  (128.0f * ESCALA_VISUAL_CHAO)
 #define DURACAO_ANIMACAO_ATAQUE 0.60f
+#define DURACAO_ANIMACAO_TIRO 0.30f
 
 void InicializarJogador(Jogador *jogador)
 {
@@ -27,7 +28,9 @@ void InicializarJogador(Jogador *jogador)
     jogador->texturaSalto = LoadTexture("assets/images/nico/nico_salto_vertical_sheet.png");
     jogador->texturaSaltoDiagonal = LoadTexture("assets/images/nico/nico_salto_diagonal_sheet.png");
     jogador->texturaAtaque = LoadTexture("assets/images/nico/nico_ataque_corpo.png");
+    jogador->texturaPistola = LoadTexture("assets/images/nico/nico_pistola_proposta.png");
     jogador->tempoAtaqueVisual = 0.0f;
+    jogador->tempoTiroVisual = 0.0f;
     jogador->saltoDiagonal = false;
     jogador->preparoSalto = 0.0f;
     jogador->tempoNoAr = 0.0f;
@@ -40,11 +43,17 @@ void InicializarJogador(Jogador *jogador)
     if (jogador->texturaSalto.id) SetTextureFilter(jogador->texturaSalto, TEXTURE_FILTER_BILINEAR);
     if (jogador->texturaSaltoDiagonal.id) SetTextureFilter(jogador->texturaSaltoDiagonal, TEXTURE_FILTER_BILINEAR);
     if (jogador->texturaAtaque.id) SetTextureFilter(jogador->texturaAtaque, TEXTURE_FILTER_BILINEAR);
+    if (jogador->texturaPistola.id) SetTextureFilter(jogador->texturaPistola, TEXTURE_FILTER_BILINEAR);
 }
 
 void IniciarAnimacaoAtaque(Jogador *jogador)
 {
     jogador->tempoAtaqueVisual = DURACAO_ANIMACAO_ATAQUE;
+}
+
+void IniciarAnimacaoTiro(Jogador *jogador)
+{
+    jogador->tempoTiroVisual = DURACAO_ANIMACAO_TIRO;
 }
 
 void AtualizarJogador(Jogador *jogador, float dt)
@@ -53,6 +62,7 @@ void AtualizarJogador(Jogador *jogador, float dt)
     bool estavaNoChao = jogador->estaNoChao;
     float movimentoX = 0.0f;
     if (jogador->tempoAtaqueVisual > 0.0f) jogador->tempoAtaqueVisual -= dt;
+    if (jogador->tempoTiroVisual > 0.0f) jogador->tempoTiroVisual -= dt;
 
     if (jogador->estaNoChao && jogador->tempoNoAr > 0.0f) {
         jogador->tempoPouso = 0.1f;
@@ -118,6 +128,8 @@ void DescarregarJogador(Jogador *jogador)
     if (jogador->texturaSalto.id) UnloadTexture(jogador->texturaSalto);
     if (jogador->texturaSaltoDiagonal.id) UnloadTexture(jogador->texturaSaltoDiagonal);
     if (jogador->texturaAtaque.id) UnloadTexture(jogador->texturaAtaque);
+    if (jogador->texturaPistola.id) UnloadTexture(jogador->texturaPistola);
+    jogador->texturaPistola.id = 0;
     jogador->texturaAtaque.id = 0;
     jogador->texturaSaltoDiagonal.id = 0;
     jogador->texturaCorrida.id = jogador->texturaParado.id = jogador->texturaSalto.id = 0;
@@ -139,6 +151,24 @@ void DesenharJogador(const Jogador *jogador)
         Rectangle destino = { jogador->corpo.x + jogador->corpo.width / 2.0f - larguraVisual / 2.0f,
                               jogador->corpo.y + jogador->corpo.height - alturaVisual * 0.94f,
                               larguraVisual, alturaVisual };
+        DrawTexturePro(textura, origem, destino, (Vector2){0, 0}, 0.0f, WHITE);
+        return;
+    }
+    if (jogador->tempoTiroVisual > 0.0f && jogador->texturaPistola.id) {
+        Texture2D textura = jogador->texturaPistola;
+        float largura = (float)textura.width / 4.0f;
+        float altura = (float)textura.height / 2.0f;
+        // O tiro sai no clique: comeca na pose de disparo e segue pelo recuo.
+        int quadro = 4 + (int)((1.0f - jogador->tempoTiroVisual / DURACAO_ANIMACAO_TIRO) * 4.0f);
+        if (quadro < 4) quadro = 4;
+        if (quadro > 7) quadro = 7;
+        Rectangle origem = {(quadro % 4) * largura, (quadro / 4) * altura,
+                            largura * jogador->direcao, altura};
+        float alturaVisual = ALTURA_VISUAL_REPOUSO;
+        float larguraVisual = alturaVisual * largura / altura;
+        Rectangle destino = {jogador->corpo.x + jogador->corpo.width / 2.0f - larguraVisual / 2.0f,
+                             jogador->corpo.y + jogador->corpo.height - alturaVisual * 0.94f,
+                             larguraVisual, alturaVisual};
         DrawTexturePro(textura, origem, destino, (Vector2){0, 0}, 0.0f, WHITE);
         return;
     }
