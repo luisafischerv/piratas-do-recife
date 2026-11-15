@@ -1,6 +1,7 @@
 #include "raylib.h"
 #include "inimigos_ia.h"
 #include "marujo.h"
+#include "interface.h"
 
 static Texture2D texturaMarujo;
 static Texture2D texturaAndar;
@@ -27,6 +28,7 @@ void DescarregarVisualInimigos(void)
 
 static void DesenharMarujo(const Inimigo *m)
 {
+    float topoMarujo = m->corpo.y;
     if (texturaMarujo.id) {
         int quadro = 0;
         Texture2D textura = texturaMarujo;
@@ -56,6 +58,7 @@ static void DesenharMarujo(const Inimigo *m)
         Rectangle destino = { m->corpo.x + m->corpo.width / 2.0f - larguraVisual / 2.0f,
                               m->corpo.y + m->corpo.height - alturaVisual * 0.96f,
                               larguraVisual, alturaVisual };
+        topoMarujo = destino.y;
         DrawTexturePro(textura, origem, destino, (Vector2){0, 0}, 0.0f, WHITE);
     } else {
         DrawRectangleRec(m->corpo, MAROON);
@@ -65,8 +68,21 @@ static void DesenharMarujo(const Inimigo *m)
     } else if (m->estado == ESTADO_ATAQUE) {
         DrawRectangleRec(AreaGolpeMarujo(m), Fade(RED, 0.7f));
     }
-    for (int i = 0; i < m->saude; i++)
-        DrawRectangle((int)(m->corpo.x + i * 10), (int)(m->corpo.y - 10), 8, 5, RED);
+
+    const int pixel = 2;
+    const int larguraCoracao = 8 * pixel;
+    const int alturaCoracao = 7 * pixel;
+    const int espaco = 4;
+    const int passo = larguraCoracao + espaco;
+    const int larguraTotal = MARUJO_SAUDE * passo - espaco;
+
+    float centroMarujo = m->corpo.x + m->corpo.width / 2.0f;
+    int inicioX = (int)(centroMarujo - larguraTotal / 2.0f);
+    int yCoracoes = (int)topoMarujo - alturaCoracao - 3;
+
+    for (int i = 0; i < MARUJO_SAUDE; i++) {
+        DesenharCoracao(inicioX + i * passo, yCoracoes, pixel, i < m->saude);
+    }
 }
 
 void DesenharInimigos(const ListaInimigos *lista)
