@@ -28,5 +28,6 @@ bool CarregarFase(Fase *fase, int id);
 void DesenharFase(const Fase *fase);
 void DescarregarFase(Fase *fase);
 void AtualizarPlataformasFrageis(Fase *fase, const Jogador *jogador, float dt);
+void RestaurarPlataformas(Fase *fase);
 
 #endif

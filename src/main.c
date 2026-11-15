@@ -248,6 +248,7 @@ int main(void)
                 tempoProtecao = 0.0f;
                 InicializarEspada(&espada);
                 InicializarTiros(&tiros);
+                RestaurarPlataformas(&fase);
 
                 LiberarInimigos(&inimigos);
                 InicializarLista(&inimigos);

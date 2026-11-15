@@ -28,3 +28,12 @@ void AtualizarPlataformasFrageis(Fase *f, const Jogador *j, float dt){
         }
     }
 }
+
+void RestaurarPlataformas(Fase *f){
+    for (int i = 0; i < f->qtdPlataformas; i++){
+        Plataforma *p = &f->plataformas[i];
+        p->estado = PLAT_NORMAL;
+        p->tempoAviso = 0.0f;
+        p->ativa = true;
+    }
+}
