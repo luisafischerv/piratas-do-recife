@@ -216,6 +216,7 @@ int main(void)
             if (nico.corpo.x + nico.corpo.width > fase.largura)
                 nico.corpo.x = fase.largura - nico.corpo.width;
             ResolverColisoesCenario(&nico, &fase, anterior);
+            AtualizarPlataformasFrageis(&fase, &nico, dt);
             if (AtualizarAtaqueEspada(&espada, IsMouseButtonPressed(MOUSE_BUTTON_LEFT), dt))
                 IniciarAnimacaoAtaque(&nico);
             VerificarAcertosEspada(&espada, &nico, &inimigos);
