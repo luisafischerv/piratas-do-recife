@@ -6,6 +6,7 @@
 #include "marujo.h"
 #include "interface.h"
 #include "tiros.h"
+#include "cipo.h"
 #include <math.h>
 
 #define SAUDE_MAXIMA 3
@@ -149,6 +150,8 @@ int main(void)
     Texture2D fundoInicial = LoadTexture("assets/images/tela_inicial.png");
     CarregarVisualInimigos();
     CarregarVisualTiros();
+    SistemaCipos cipos;
+    CarregarCipos(&cipos);
 
     Jogador nico;
     InicializarJogador(&nico);
@@ -211,13 +214,18 @@ int main(void)
             if (dt > 1.0f / 30.0f) dt = 1.0f / 30.0f;
 
             Rectangle anterior = nico.corpo;
-            AtualizarJogador(&nico, dt);
+            if (fase.id != 2 || cipos.agarrado < 0) AtualizarJogador(&nico, dt);
+            if (fase.id == 2) {
+                float direcaoCipo = (float)IsKeyDown(KEY_D) - (float)IsKeyDown(KEY_A);
+                AtualizarCipos(&cipos, &nico, dt, direcaoCipo,
+                               IsKeyPressed(KEY_E), IsKeyPressed(KEY_SPACE));
+            }
             if (nico.corpo.x < 0.0f) nico.corpo.x = 0.0f;
             if (nico.corpo.x + nico.corpo.width > fase.largura)
                 nico.corpo.x = fase.largura - nico.corpo.width;
-            ResolverColisoesCenario(&nico, &fase, anterior);
+            if (cipos.agarrado < 0) ResolverColisoesCenario(&nico, &fase, anterior);
             AtualizarPlataformasFrageis(&fase, &nico, dt);
-            if (AtualizarAtaqueEspada(&espada, IsMouseButtonPressed(MOUSE_BUTTON_LEFT), dt))
+            if (AtualizarAtaqueEspada(&espada, cipos.agarrado < 0 && IsMouseButtonPressed(MOUSE_BUTTON_LEFT), dt))
                 IniciarAnimacaoAtaque(&nico);
             VerificarAcertosEspada(&espada, &nico, &inimigos);
             AtivarInimigosProximos(&inimigos, &nico);
@@ -226,7 +234,7 @@ int main(void)
             }
 
             if (AtualizarPistola(&tiros, &nico,
-                                 fase.id >= 2 && IsMouseButtonDown(MOUSE_BUTTON_RIGHT), dt))
+                                 fase.id >= 2 && cipos.agarrado < 0 && IsMouseButtonDown(MOUSE_BUTTON_RIGHT), dt))
                 IniciarAnimacaoTiro(&nico);
             AtualizarAtiradores(&tiros, &inimigos, &nico, dt);
             int danoRecebido = AtualizarTiros(&tiros, &fase, &inimigos, &nico, dt);
@@ -248,6 +256,7 @@ int main(void)
                 tempoProtecao = 0.0f;
                 InicializarEspada(&espada);
                 InicializarTiros(&tiros);
+                ReiniciarCipos(&cipos);
 
                 LiberarInimigos(&inimigos);
                 InicializarLista(&inimigos);
@@ -264,6 +273,7 @@ int main(void)
                     tempoProtecao = 0.0f;
                     InicializarEspada(&espada);
                     InicializarTiros(&tiros);
+                    ReiniciarCipos(&cipos);
                     LiberarInimigos(&inimigos);
                     InicializarLista(&inimigos);
                     CriarInimigosDaFase(&inimigos, fase.id);
@@ -282,12 +292,16 @@ int main(void)
         camera.target = (Vector2){cameraX, 0.0f};
         BeginMode2D(camera);
         DesenharFase(&fase);
+        if (fase.id == 2) DesenharCipos(&cipos);
         if (fase.id == 1)
             DrawText("MANGUE >", 2400, 500, 20, GOLD);
         DesenharInimigos(&inimigos);
         DesenharTiros(&tiros);
         bool nicoVisivel = tempoProtecao <= 0.0f || (int)(tempoProtecao * 10.0f) % 2 == 0;
-        if (nicoVisivel) DesenharJogador(&nico);
+        if (nicoVisivel) {
+            if (fase.id == 2 && cipos.agarrado >= 0) DesenharNicoNoCipo(&cipos, &nico);
+            else DesenharJogador(&nico);
+        }
         EndMode2D();
         DrawText(fase.id == 1 ?
                  "A/D: mover  ESPACO: pular  MOUSE ESQ: espada  ESC: pausar" :
@@ -295,6 +309,8 @@ int main(void)
                  24, 24, 20, RAYWHITE);
         if (fase.id == 2 && nico.corpo.x < 500.0f)
             DrawText("PISTOLA LIBERADA: segure o botao direito do mouse", 24, 130, 20, GOLD);
+        if (fase.id == 2 && nico.corpo.x > 1450.0f)
+            DrawText("CIPO: pule e pressione E; A/D balancam; ESPACO solta", 24, 130, 20, GOLD);
 
         for (int i = 0; i < SAUDE_MAXIMA; i++) {
             DesenharCoracao(24 + i * 40, 56, 4, i < saudeNico);
@@ -325,6 +341,7 @@ int main(void)
     DescarregarFase(&fase);
     DescarregarVisualInimigos();
     DescarregarVisualTiros();
+    DescarregarCipos(&cipos);
     DescarregarJogador(&nico);
     if (fundoInicial.id != 0) {
         UnloadTexture(fundoInicial);
