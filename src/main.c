@@ -5,6 +5,7 @@
 #include "inimigos_ia.h"
 #include "marujo.h"
 #include "interface.h"
+#include "tiros.h"
 
 #define SAUDE_MAXIMA 3
 #define DURACAO_PROTECAO 1.0f
@@ -21,6 +22,7 @@ static void AplicarDanoJogador(int *saude, float *tempoProtecao, int dano){
 static void CriarMarujosDoCais(ListaInimigos *inimigos){
     InserirInimigo(inimigos, CriarMarujo(650.0f, 620.0f, 380.0f, 860.0f));
     InserirInimigo(inimigos, CriarMarujo(1050.0f, 620.0f, 920.0f, 1280.0f));
+    InserirInimigo(inimigos, CriarAtirador(780.0f, 620.0f));
 }
 
 static void DesenharTelaInicial(Texture2D fundoInicial) {
@@ -101,6 +103,8 @@ int main(void)
     CriarMarujosDoCais(&inimigos);
     Espada espada;
     InicializarEspada(&espada);
+    SistemaTiros tiros;
+    InicializarTiros(&tiros);
 
     int saudeNico = SAUDE_MAXIMA;
     float tempoProtecao = 0.0f;
@@ -157,7 +161,10 @@ int main(void)
                 tempoProtecao -= dt;
             }
 
-            int danoRecebido = AtualizarInimigos(&inimigos, &nico, dt);
+            AtualizarPistola(&tiros, &nico, IsMouseButtonDown(MOUSE_BUTTON_RIGHT), dt);
+            AtualizarAtiradores(&tiros, &inimigos, &nico, dt);
+            int danoRecebido = AtualizarTiros(&tiros, &fase, &inimigos, &nico, dt);
+            danoRecebido += AtualizarInimigos(&inimigos, &nico, dt);
             AplicarDanoJogador(&saudeNico, &tempoProtecao, danoRecebido);
 
             if (saudeNico <= 0 || nico.corpo.y > fase.limiteQueda) {
@@ -165,6 +172,7 @@ int main(void)
                 saudeNico = SAUDE_MAXIMA;
                 tempoProtecao = 0.0f;
                 InicializarEspada(&espada);
+                InicializarTiros(&tiros);
 
                 LiberarInimigos(&inimigos);
                 InicializarLista(&inimigos);
@@ -176,7 +184,7 @@ int main(void)
         ClearBackground((Color){ 16, 43, 58, 255 });
 
         DesenharFase(&fase);
-        DrawText("A / D: mover     ESPACO: pular     MOUSE ESQ: espada     ESC: pausar", 24, 24, 22, RAYWHITE);
+        DrawText("A/D: mover  ESPACO: pular  MOUSE ESQ: espada  DIR: pistola  ESC: pausar", 24, 24, 20, RAYWHITE);
 
         for (int i = 0; i < SAUDE_MAXIMA; i++) {
             DesenharCoracao(24 + i * 40, 56, 4, i < saudeNico);
@@ -187,6 +195,7 @@ int main(void)
                  24, 96, 22, RAYWHITE);
 
         DesenharInimigos(&inimigos);
+        DesenharTiros(&tiros);
         bool nicoVisivel = tempoProtecao <= 0.0f || (int)(tempoProtecao * 10.0f) % 2 == 0;
 
         if (nicoVisivel) {

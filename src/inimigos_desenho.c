@@ -93,6 +93,14 @@ void DesenharInimigos(const ListaInimigos *lista)
             DesenharMarujo(&no->dados);
             break;
         case INIMIGO_ATIRADOR:
+            DrawRectangleRec(no->dados.corpo, no->dados.tempoDano > 0 ? WHITE : DARKPURPLE);
+            if (no->dados.estado == ESTADO_PREPARACAO) {
+                DrawText("!", (int)no->dados.corpo.x + 14, (int)no->dados.corpo.y - 32, 28, ORANGE);
+                float y = no->dados.corpo.y + no->dados.corpo.height * 0.45f + 4.0f;
+                float x = no->dados.direcao > 0 ? no->dados.corpo.x + no->dados.corpo.width : no->dados.corpo.x;
+                DrawLineEx((Vector2){x, y}, (Vector2){x + no->dados.direcao * 100.0f, y}, 2.0f, ORANGE);
+            }
+            break;
         case INIMIGO_CARANGUEJO:
             DrawRectangleRec(no->dados.corpo, BROWN); // provisorio (só até Pessoa 1 e 2 mudarem)
             break;
