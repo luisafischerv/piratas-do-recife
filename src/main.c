@@ -23,20 +23,64 @@ static void CriarMarujosDoCais(ListaInimigos *inimigos){
     InserirInimigo(inimigos, CriarMarujo(1050.0f, 620.0f, 920.0f, 1280.0f));
 }
 
-static void DesenharTelaInicial(void) {
+static void DesenharTelaInicial(Texture2D fundoInicial) {
 
     const char *titulo = "Piratas do Recife";
     const char *subtitulo = "A Maldição da Maré Negra";
     const char *dica = "Pressione Enter para jogar";
     int centroX = GetScreenWidth() / 2;
     int centroY = GetScreenHeight() / 2;
+    int yTitulo = centroY - 100;
+    int ySubtitulo = centroY - 32;
+    int yDica = centroY + 55;
+
+    if (fundoInicial.id != 0) {
+        Rectangle origem = {
+            0.0f, 0.0f, (float)fundoInicial.width, (float)fundoInicial.height
+        };
+        Rectangle destino = {
+            0.0f, 0.0f, (float)GetScreenWidth(), (float)GetScreenHeight()
+        };
+
+        DrawTexturePro(fundoInicial, origem, destino,
+                       (Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+
+        yTitulo = 90;
+        ySubtitulo = 158;
+        yDica = GetScreenHeight() - 65;
+    }
 
     DrawText(titulo, centroX - MeasureText(titulo, 56) / 2,
-             centroY - 100, 56, GOLD);
+             yTitulo, 56, GOLD);
     DrawText(subtitulo, centroX - MeasureText(subtitulo, 30) / 2,
-             centroY - 32, 30, RAYWHITE);
+             ySubtitulo, 30, RAYWHITE);
     DrawText(dica, centroX - MeasureText(dica, 24) / 2,
-             centroY + 55, 24, RAYWHITE);
+             yDica, 24, RAYWHITE);
+}
+
+static void DesenharIntroducao(Texture2D fundoInicial) {
+    int largura = GetScreenWidth();
+    int altura = GetScreenHeight();
+
+    if (fundoInicial.id != 0) {
+        Rectangle origem = {
+            0, 0, (float)fundoInicial.width, (float)fundoInicial.height
+        };
+        Rectangle destino = { 0, 0, (float)largura, (float)altura };
+
+        DrawTexturePro(fundoInicial, origem, destino,
+                       (Vector2){ 0, 0 }, 0.0f, WHITE);
+    }
+
+    DrawRectangle(0, altura - 210, largura, 210, Fade(BLACK, 0.82f));
+
+    DrawText("O Capitão Avelino retirou um sino das ruínas do mangue e despertou a Maré Negra.",
+             48, altura - 180, 24, RAYWHITE);
+    DrawText("Uma névoa avançou sobre o Recife com a tripulação amaldiçoada.",
+             48, altura - 145, 24, RAYWHITE);
+    DrawText("Nico Maré precisa chegar ao navio e enfrentar Avelino para salvar a cidade.",
+             48, altura - 110, 24, RAYWHITE);
+    DrawText("Pressione Enter para continuar", 48, altura - 55, 22, GOLD);
 }
 
 int main(void)
@@ -44,6 +88,7 @@ int main(void)
     InitWindow(1280, 720, "Piratas do Recife: A Maldicao da Mare Negra");
     SetTargetFPS(60);
     SetExitKey(KEY_NULL);
+    Texture2D fundoInicial = LoadTexture("assets/images/tela_inicial.png");
     CarregarVisualInimigos();
 
     Jogador nico;
@@ -62,17 +107,30 @@ int main(void)
     bool pausado = false;
     double tempoTotal = 0.0;
     bool naTelaInicial = true;
+    bool naIntroducao = false;
 
     while (!WindowShouldClose()) {
-
         if (naTelaInicial) {
             if (IsKeyPressed(KEY_ENTER)) {
                 naTelaInicial = false;
+                naIntroducao = true;
             }
 
             BeginDrawing();
             ClearBackground((Color){ 16, 43, 58, 255 });
-            DesenharTelaInicial();
+            DesenharTelaInicial(fundoInicial);
+            EndDrawing();
+            continue;
+        }
+
+        if (naIntroducao) {
+            if (IsKeyPressed(KEY_ENTER)) {
+                naIntroducao = false;
+            }
+
+            BeginDrawing();
+            ClearBackground((Color){ 16, 43, 58, 255 });
+            DesenharIntroducao(fundoInicial);
             EndDrawing();
             continue;
         }
@@ -155,6 +213,9 @@ int main(void)
     LiberarInimigos(&inimigos);
     DescarregarVisualInimigos();
     DescarregarJogador(&nico);
+    if (fundoInicial.id != 0) {
+        UnloadTexture(fundoInicial);
+    }
     CloseWindow();
     return 0;
 }
