@@ -33,6 +33,7 @@ typedef struct Inimigo {
     float tempoDano;         // tempo restante piscando branco depois de levar golpe
     float tempoCaminhada;
     bool caminhando;
+    bool aguardaProximidade;
 } Inimigo;
 
 typedef struct NoInimigo {

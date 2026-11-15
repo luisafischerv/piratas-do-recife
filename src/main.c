@@ -6,6 +6,7 @@
 #include "marujo.h"
 #include "interface.h"
 #include "tiros.h"
+#include <math.h>
 
 #define SAUDE_MAXIMA 3
 #define DURACAO_PROTECAO 1.0f
@@ -20,9 +21,48 @@ static void AplicarDanoJogador(int *saude, float *tempoProtecao, int dano){
 }
 
 static void CriarMarujosDoCais(ListaInimigos *inimigos){
-    InserirInimigo(inimigos, CriarMarujo(650.0f, 620.0f, 380.0f, 860.0f));
-    InserirInimigo(inimigos, CriarMarujo(1050.0f, 620.0f, 920.0f, 1280.0f));
-    InserirInimigo(inimigos, CriarAtirador(780.0f, 620.0f));
+    Inimigo marujo = CriarMarujo(700.0f, 620.0f, 400.0f, 1420.0f);
+    marujo.aguardaProximidade = true;
+    InserirInimigo(inimigos, marujo);
+    Inimigo atirador = CriarAtirador(1080.0f, 620.0f);
+    atirador.limiteEsquerdo = 900.0f;
+    atirador.limiteDireito = 1260.0f;
+    atirador.aguardaProximidade = true;
+    InserirInimigo(inimigos, atirador);
+    marujo = CriarMarujo(1320.0f, 620.0f, 400.0f, 1420.0f);
+    marujo.aguardaProximidade = true;
+    InserirInimigo(inimigos, marujo);
+    // Os limites mantem o atirador na passarela de 1600 a 1860.
+    atirador = CriarAtirador(1730.0f, 480.0f);
+    atirador.limiteEsquerdo = 1600.0f;
+    atirador.limiteDireito = 1860.0f;
+    atirador.aguardaProximidade = true;
+    InserirInimigo(inimigos, atirador);
+    // Marujo patrulha o espaco aberto sob as passarelas da segunda tela.
+    marujo = CriarMarujo(1870.0f, 620.0f, 1570.0f, 2050.0f);
+    marujo.aguardaProximidade = true;
+    InserirInimigo(inimigos, marujo);
+    // Segundo atirador elevado fica limitado a passarela mais alta.
+    atirador = CriarAtirador(2000.0f, 435.0f);
+    atirador.limiteEsquerdo = 1950.0f;
+    atirador.limiteDireito = 2120.0f;
+    atirador.aguardaProximidade = true;
+    InserirInimigo(inimigos, atirador);
+    atirador = CriarAtirador(2260.0f, 620.0f);
+    atirador.limiteEsquerdo = 2110.0f;
+    atirador.limiteDireito = 2520.0f;
+    atirador.aguardaProximidade = true;
+    InserirInimigo(inimigos, atirador);
+}
+
+static void AtivarInimigosProximos(ListaInimigos *inimigos, const Jogador *nico)
+{
+    for (NoInimigo *no = inimigos->inicio; no; no = no->proximo) {
+        Inimigo *inimigo = &no->dados;
+        if (inimigo->aguardaProximidade &&
+            fabsf(CentroXRetangulo(inimigo->corpo) - CentroXRetangulo(nico->corpo)) <= 700.0f)
+            inimigo->aguardaProximidade = false;
+    }
 }
 
 static void DesenharTelaInicial(Texture2D fundoInicial) {
@@ -99,6 +139,8 @@ int main(void)
     const Jogador nicoInicial = nico;
     Fase fase;
     CarregarFase(&fase, 1);
+    Camera2D camera = {0};
+    camera.zoom = 1.0f;
     ListaInimigos inimigos;
     InicializarLista(&inimigos);
     CriarMarujosDoCais(&inimigos);
@@ -154,10 +196,14 @@ int main(void)
 
             Rectangle anterior = nico.corpo;
             AtualizarJogador(&nico, dt);
+            if (nico.corpo.x < 0.0f) nico.corpo.x = 0.0f;
+            if (nico.corpo.x + nico.corpo.width > fase.largura)
+                nico.corpo.x = fase.largura - nico.corpo.width;
             ResolverColisoesCenario(&nico, &fase, anterior);
             if (AtualizarAtaqueEspada(&espada, IsMouseButtonPressed(MOUSE_BUTTON_LEFT), dt))
                 IniciarAnimacaoAtaque(&nico);
             VerificarAcertosEspada(&espada, &nico, &inimigos);
+            AtivarInimigosProximos(&inimigos, &nico);
             if (tempoProtecao > 0.0f) {
                 tempoProtecao -= dt;
             }
@@ -165,8 +211,15 @@ int main(void)
             AtualizarPistola(&tiros, &nico, IsMouseButtonDown(MOUSE_BUTTON_RIGHT), dt);
             AtualizarAtiradores(&tiros, &inimigos, &nico, dt);
             int danoRecebido = AtualizarTiros(&tiros, &fase, &inimigos, &nico, dt);
+            // AtualizarInimigos remove cada inimigo derrotado uma unica vez.
+            int quantidadeAntes = inimigos.quantidade;
             danoRecebido += AtualizarInimigos(&inimigos, &nico, dt);
+            int derrotados = quantidadeAntes - inimigos.quantidade;
             AplicarDanoJogador(&saudeNico, &tempoProtecao, danoRecebido);
+            if (saudeNico > 0 && nico.corpo.y <= fase.limiteQueda) {
+                saudeNico += derrotados;
+                if (saudeNico > SAUDE_MAXIMA) saudeNico = SAUDE_MAXIMA;
+            }
 
             if (saudeNico <= 0 || nico.corpo.y > fase.limiteQueda) {
                 nico = nicoInicial;
@@ -184,7 +237,19 @@ int main(void)
         BeginDrawing();
         ClearBackground((Color){ 16, 43, 58, 255 });
 
+        float cameraX = nico.corpo.x + nico.corpo.width / 2.0f - GetScreenWidth() / 2.0f;
+        float limiteCamera = fase.largura - GetScreenWidth();
+        if (limiteCamera < 0.0f) limiteCamera = 0.0f;
+        if (cameraX < 0.0f) cameraX = 0.0f;
+        if (cameraX > limiteCamera) cameraX = limiteCamera;
+        camera.target = (Vector2){cameraX, 0.0f};
+        BeginMode2D(camera);
         DesenharFase(&fase);
+        DesenharInimigos(&inimigos);
+        DesenharTiros(&tiros);
+        bool nicoVisivel = tempoProtecao <= 0.0f || (int)(tempoProtecao * 10.0f) % 2 == 0;
+        if (nicoVisivel) DesenharJogador(&nico);
+        EndMode2D();
         DrawText("A/D: mover  ESPACO: pular  MOUSE ESQ: espada  DIR: pistola  ESC: pausar", 24, 24, 20, RAYWHITE);
 
         for (int i = 0; i < SAUDE_MAXIMA; i++) {
@@ -194,14 +259,6 @@ int main(void)
         int segundos = (int)tempoTotal;
         DrawText(TextFormat("Tempo: %02d:%02d", segundos / 60, segundos % 60),
                  24, 96, 22, RAYWHITE);
-
-        DesenharInimigos(&inimigos);
-        DesenharTiros(&tiros);
-        bool nicoVisivel = tempoProtecao <= 0.0f || (int)(tempoProtecao * 10.0f) % 2 == 0;
-
-        if (nicoVisivel) {
-            DesenharJogador(&nico);
-        }
 
         if (pausado) {
             DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.6f));
@@ -221,6 +278,7 @@ int main(void)
     }
 
     LiberarInimigos(&inimigos);
+    DescarregarFase(&fase);
     DescarregarVisualInimigos();
     DescarregarVisualTiros();
     DescarregarJogador(&nico);

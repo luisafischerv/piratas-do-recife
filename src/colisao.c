@@ -17,6 +17,16 @@ void ResolverColisoesCenario(Jogador *j, const Fase *f, Rectangle anterior) {
         if (!Sobrepoe(j->corpo, p)) continue;
 
         float baseAnterior = anterior.y + anterior.height;
+        if (plat->tipo == PLAT_FIXA) {
+            // Passarela permite subir por baixo e so sustenta na descida.
+            if (j->velocidadeY >= 0.0f && baseAnterior <= p.y + TOLERANCIA &&
+                j->corpo.y + j->corpo.height >= p.y) {
+                j->corpo.y = p.y - j->corpo.height;
+                j->velocidadeY = 0.0f;
+                j->estaNoChao = true;
+            }
+            continue;
+        }
         if (baseAnterior <= p.y + TOLERANCIA) {
             j->corpo.y = p.y - j->corpo.height;
             if (j->velocidadeY > 0.0f) j->velocidadeY = 0.0f;

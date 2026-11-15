@@ -15,9 +15,16 @@ typedef struct Fase {
     Vector2 pontoInicial;
     Rectangle areaSaida;
     float limiteQueda;
+    Texture2D fundo;
+    Texture2D fundo2;
+    Texture2D chao;
+    Texture2D caixa;
+    Texture2D passarela;
+    Texture2D cargas;
 } Fase;
 
 bool CarregarFase(Fase *fase, int id);
 void DesenharFase(const Fase *fase);
+void DescarregarFase(Fase *fase);
 
 #endif

@@ -6,7 +6,7 @@
 #define VELOCIDADE_TIRO 550.0f
 #define AVISO_ATIRADOR 0.8f
 #define RECARGA_ATIRADOR 1.5f
-#define VELOCIDADE_ATIRADOR 30.0f
+#define VELOCIDADE_ATIRADOR 60.0f
 
 static bool Disparar(SistemaTiros *s, Rectangle corpo, int direcao, bool jogador)
 {
@@ -47,7 +47,7 @@ void AtualizarAtiradores(SistemaTiros *s, ListaInimigos *lista, const Jogador *j
 {
     for (NoInimigo *no = lista->inicio; no; no = no->proximo) {
         Inimigo *i = &no->dados;
-        if (i->tipo != INIMIGO_ATIRADOR || i->saude <= 0) continue;
+        if (i->tipo != INIMIGO_ATIRADOR || i->saude <= 0 || i->aguardaProximidade) continue;
         i->caminhando = false;
         i->timerEstado -= dt;
         if (i->estado == ESTADO_PREPARACAO) {
@@ -66,7 +66,7 @@ void AtualizarAtiradores(SistemaTiros *s, ListaInimigos *lista, const Jogador *j
             i->golpeJaAcertou = false;
             i->timerEstado = AVISO_ATIRADOR;
         } else if (i->estado == ESTADO_RECUPERACAO &&
-                   (!i->golpeJaAcertou || i->timerEstado <= 0.9f)) {
+                   (!i->golpeJaAcertou || i->timerEstado <= 1.15f)) {
             // Patrulha curta entre tiros; para durante o aviso e o recuo.
             float xAnterior = i->corpo.x;
             MoverInimigoNosLimites(i, i->direcao * VELOCIDADE_ATIRADOR * dt);

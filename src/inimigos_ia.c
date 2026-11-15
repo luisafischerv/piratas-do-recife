@@ -36,6 +36,10 @@ int AtualizarInimigos(ListaInimigos *lista, const Jogador *jogador, float dt)
             RemoverInimigo(lista, atual);
         } else {
             if (inimigo->tempoDano > 0.0f) inimigo->tempoDano -= dt;
+            if (inimigo->aguardaProximidade) {
+                atual = proximo;
+                continue;
+            }
             switch (inimigo->tipo) {
             case INIMIGO_MARUJO:
                 danoTotal += AtualizarMarujo(inimigo, jogador, dt);

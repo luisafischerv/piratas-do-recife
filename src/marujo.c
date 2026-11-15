@@ -5,10 +5,10 @@
 // Valores EXPERIMENTAIS
 #define MARUJO_LARGURA  44.0f
 #define MARUJO_ALTURA   64.0f
-#define MARUJO_VEL_PATRULHA      70.0f   // px por segundo
-#define MARUJO_VEL_APROXIMACAO   125.0f
-#define MARUJO_PERCEPCAO         260.0f  // distancia em que nota o Nico
-#define MARUJO_DESISTENCIA       340.0f  // se o Nico passar disso, volta a patrulhar
+#define MARUJO_VEL_PATRULHA      95.0f   // px por segundo
+#define MARUJO_VEL_APROXIMACAO   150.0f
+#define MARUJO_PERCEPCAO         360.0f  // distancia em que nota o Nico
+#define MARUJO_DESISTENCIA       440.0f  // se o Nico passar disso, volta a patrulhar
 #define MARUJO_DIF_ALTURA_MAX    90.0f   // ignora o Nico muito acima ou abaixo
 #define MARUJO_ALCANCE_GOLPE     36.0f
 #define MARUJO_TEMPO_PREPARACAO  0.45f   // segundos de aviso antes do golpe
@@ -49,6 +49,10 @@ int AtualizarMarujo(Inimigo *m, const Jogador *jogador, float dt)
     bool mesmaAltura = fabsf(dy) < MARUJO_DIF_ALTURA_MAX;
     // Espaco vazio entre os dois corpos (0 = encostados).
     float vao = distancia - (m->corpo.width + jogador->corpo.width) / 2.0f;
+    // Considera o alcance do golpe alem da area de patrulha.
+    float alcanceInicioGolpe = MARUJO_ALCANCE_GOLPE * 0.8f;
+    bool jogadorAlcancavel = jogador->corpo.x + jogador->corpo.width >= m->limiteEsquerdo - alcanceInicioGolpe &&
+                             jogador->corpo.x <= m->limiteDireito + alcanceInicioGolpe;
 
     if (m->timerEstado > 0.0f) m->timerEstado -= dt;
 
@@ -58,13 +62,15 @@ int AtualizarMarujo(Inimigo *m, const Jogador *jogador, float dt)
         if (m->corpo.x <= m->limiteEsquerdo) m->direcao = 1;
         if (m->corpo.x + m->corpo.width >= m->limiteDireito) m->direcao = -1;
 
-        if (distancia < MARUJO_PERCEPCAO && mesmaAltura)
+        if (distancia < MARUJO_PERCEPCAO && mesmaAltura && jogadorAlcancavel)
             MudarEstadoInimigo(m, ESTADO_APROXIMACAO, 0.0f);
         break;
 
     case ESTADO_APROXIMACAO:
         m->direcao = (dx >= 0.0f) ? 1 : -1;
-        if (distancia > MARUJO_DESISTENCIA || !mesmaAltura) {
+        if (distancia > MARUJO_DESISTENCIA || !mesmaAltura || !jogadorAlcancavel) {
+            // Se Nico saiu da area, volta a percorrer o cais em vez de ficar parado na borda.
+            if (!jogadorAlcancavel) m->direcao = dx < 0.0f ? 1 : -1;
             MudarEstadoInimigo(m, ESTADO_PATRULHA, 0.0f);
         } else if (vao <= MARUJO_ALCANCE_GOLPE * 0.8f) {
             MudarEstadoInimigo(m, ESTADO_PREPARACAO, MARUJO_TEMPO_PREPARACAO);

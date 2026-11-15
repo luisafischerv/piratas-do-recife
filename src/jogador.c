@@ -91,10 +91,6 @@ void AtualizarJogador(Jogador *jogador, float dt)
 
     if (!jogador->estaNoChao) jogador->tempoNoAr += dt;
 
-    if (jogador->corpo.x < 0.0f) jogador->corpo.x = 0.0f;
-    if (jogador->corpo.x + jogador->corpo.width > GetScreenWidth()) {
-        jogador->corpo.x = (float)GetScreenWidth() - jogador->corpo.width;
-    }
     // Cada estado comeca no primeiro quadro, com seu proprio ritmo.
     if (estavaAndando != jogador->andando || estavaNoChao != jogador->estaNoChao) {
         jogador->tempoAnimacao = 0.0f;

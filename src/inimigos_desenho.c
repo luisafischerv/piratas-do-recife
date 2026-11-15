@@ -43,7 +43,7 @@ static void DesenharMarujo(const Inimigo *m)
     if (texturaMarujo.id) {
         int quadro = 0;
         Texture2D textura = texturaMarujo;
-        if ((m->estado == ESTADO_PATRULHA || m->estado == ESTADO_APROXIMACAO) && texturaAndar.id) {
+        if (!m->aguardaProximidade && (m->estado == ESTADO_PATRULHA || m->estado == ESTADO_APROXIMACAO) && texturaAndar.id) {
             textura = texturaAndar;
             quadro = (int)(GetTime() * (m->estado == ESTADO_APROXIMACAO ? 10.0 : 7.0)) % 8;
         } else if (texturaAtaque.id && m->estado == ESTADO_PREPARACAO) {

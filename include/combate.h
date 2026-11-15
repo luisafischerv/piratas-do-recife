@@ -21,7 +21,7 @@ void InicializarEspada(Espada *espada);
 // Retorna true no quadro em que um golpe novo comeca.
 bool AtualizarAtaqueEspada(Espada *espada, bool clicou, float dt);
 
-// Retangulo a frente do Nico, conforme jogador->direcao. Vale no chao e no ar.
+// Retangulo da metade frontal do corpo ate o alcance da espada, no chao e no ar.
 Rectangle AreaEspada(const Jogador *jogador);
 
 // Tira 1 de saude de cada inimigo dentro da area, no maximo uma vez por golpe.

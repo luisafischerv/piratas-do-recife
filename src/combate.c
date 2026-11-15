@@ -39,10 +39,12 @@ bool AtualizarAtaqueEspada(Espada *espada, bool clicou, float dt)
 Rectangle AreaEspada(const Jogador *jogador)
 {
     const Rectangle c = jogador->corpo;
-    float altura = c.height * 0.7f;
-    float y = c.y + c.height * 0.15f;
-    float x = (jogador->direcao > 0) ? c.x + c.width : c.x - ESPADA_ALCANCE;
-    return (Rectangle){ x, y, ESPADA_ALCANCE, altura };
+    // Inclui a metade frontal do corpo para acertar inimigos muito proximos.
+    float altura = c.height * 0.8f;
+    float y = c.y + c.height * 0.1f;
+    float largura = ESPADA_ALCANCE + c.width * 0.5f;
+    float x = (jogador->direcao > 0) ? c.x + c.width * 0.5f : c.x - ESPADA_ALCANCE;
+    return (Rectangle){ x, y, largura, altura };
 }
 
 int VerificarAcertosEspada(const Espada *espada, const Jogador *jogador, ListaInimigos *lista)
