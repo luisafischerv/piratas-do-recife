@@ -1,4 +1,5 @@
 #include "fase.h"
+#include <math.h>
 
 #define CHAO_Y 620.0f
 
@@ -88,14 +89,33 @@ static void DesenharDetalhe(Texture2D textura, Rectangle origem, Rectangle desti
 
 static void DesenharPlataformaFragil(const Fase *f, const Plataforma *p){
     Color tom = (Color){ 170, 200, 150, 255 };
+    Rectangle destino = p->area;
+    float progresso = 0.0f;
+
+    if (p->estado == PLAT_AVISO){
+        progresso = 1.0f - p->tempoAviso / TEMPO_AVISO_FRAGIL;
+        destino.x += sinf((float)GetTime() * 60.0f) * 4.0f * progresso;
+
+        tom.r = (unsigned char)(170 + 70 * progresso);
+        tom.g = (unsigned char)(200 - 120 * progresso);
+        tom.b = (unsigned char)(150 - 100 * progresso);
+    }
 
     if (f->passarela.id) {
         Rectangle origem = { 30, 220, 2110, 375 };
-        Rectangle destino = p->area;
-        destino.height = 70.0f;
-        DrawTexturePro(f->passarela, origem, destino, (Vector2){0, 0}, 0.0f, tom);
+        Rectangle desenho = destino;
+        desenho.height = 70.0f;
+        DrawTexturePro(f->passarela, origem, desenho, (Vector2){0, 0}, 0.0f, tom);
     } else {
-        DrawRectangleRec(p->area, tom);
+        DrawRectangleRec(destino, tom);
+    }
+
+    if (progresso > 0.3f) {
+        Color racha = (Color){ 40, 20, 10, 255 };
+        float x = destino.x, y = destino.y, w = destino.width;
+        DrawLineEx((Vector2){ x + w * 0.30f, y + 2 }, (Vector2){ x + w * 0.42f, y + 14 }, 3.0f, racha);
+        DrawLineEx((Vector2){ x + w * 0.42f, y + 14 }, (Vector2){ x + w * 0.36f, y + 22 }, 3.0f, racha);
+        DrawLineEx((Vector2){ x + w * 0.68f, y + 2 }, (Vector2){ x + w * 0.60f, y + 16 }, 3.0f, racha);
     }
 }
 
