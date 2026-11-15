@@ -72,10 +72,10 @@ bool CarregarFase(Fase *f, int id){
         f->limiteQueda = CHAO_Y + 200.0f;
         AdicionarPlataforma(f, 0.0f, CHAO_Y, 1280.0f, 100.0f, PLAT_CHAO);
         AdicionarPlataforma(f, 1280.0f, CHAO_Y, 370.0f, 100.0f, PLAT_CHAO);
-        AdicionarPlataforma(f, 1650.0f, CHAO_Y, 130.0f, 20.0f, PLAT_FIXA);
-        AdicionarPlataforma(f, 1830.0f, CHAO_Y, 130.0f, 20.0f, PLAT_FIXA);
-        AdicionarPlataforma(f, 2010.0f, CHAO_Y, 130.0f, 20.0f, PLAT_FIXA);
-        AdicionarPlataforma(f, 2190.0f, CHAO_Y, 100.0f, 20.0f, PLAT_FIXA);
+        AdicionarPlataforma(f, 1650.0f, CHAO_Y, 130.0f, 20.0f, PLAT_FRAGIL);
+        AdicionarPlataforma(f, 1830.0f, CHAO_Y, 130.0f, 20.0f, PLAT_FRAGIL);
+        AdicionarPlataforma(f, 2010.0f, CHAO_Y, 130.0f, 20.0f, PLAT_FRAGIL);
+        AdicionarPlataforma(f, 2190.0f, CHAO_Y, 100.0f, 20.0f, PLAT_FRAGIL);
         AdicionarPlataforma(f, 2290.0f, CHAO_Y, 270.0f, 100.0f, PLAT_CHAO);
         return true;
     }
@@ -84,6 +84,19 @@ bool CarregarFase(Fase *f, int id){
 
 static void DesenharDetalhe(Texture2D textura, Rectangle origem, Rectangle destino, Color cor) {
     if (textura.id) DrawTexturePro(textura, origem, destino, (Vector2){0, 0}, 0.0f, cor);
+}
+
+static void DesenharPlataformaFragil(const Fase *f, const Plataforma *p){
+    Color tom = (Color){ 170, 200, 150, 255 };
+
+    if (f->passarela.id) {
+        Rectangle origem = { 30, 220, 2110, 375 };
+        Rectangle destino = p->area;
+        destino.height = 70.0f;
+        DrawTexturePro(f->passarela, origem, destino, (Vector2){0, 0}, 0.0f, tom);
+    } else {
+        DrawRectangleRec(p->area, tom);
+    }
 }
 
 void DesenharFase(const Fase *f) {
@@ -107,6 +120,10 @@ void DesenharFase(const Fase *f) {
     for (int i = 0; i < f->qtdPlataformas; i++) {
         const Plataforma *p = &f->plataformas[i];
         if (!p->ativa) continue;
+        if (p->tipo == PLAT_FRAGIL) {
+            DesenharPlataformaFragil(f, p);
+            continue;
+        }
 
         Texture2D textura = {0};
         Rectangle origem = {0};
