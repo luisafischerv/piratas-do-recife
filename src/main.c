@@ -28,6 +28,7 @@ int main(void)
 {
     InitWindow(1280, 720, "Piratas do Recife: A Maldicao da Mare Negra");
     SetTargetFPS(60);
+    SetExitKey(KEY_NULL);
     CarregarVisualInimigos();
 
     Jogador nico;
@@ -43,50 +44,80 @@ int main(void)
 
     int saudeNico = SAUDE_MAXIMA;
     float tempoProtecao = 0.0f;
+    bool pausado = false;
+    double tempoTotal = 0.0;
 
     while (!WindowShouldClose()) {
-        float dt = GetFrameTime();
-        if (dt > 1.0f / 30.0f) dt = 1.0f / 30.0f;
+        float tempoQuadro = GetFrameTime();
 
-        Rectangle anterior = nico.corpo;
-        AtualizarJogador(&nico, dt);
-        ResolverColisoesCenario(&nico, &fase, anterior);
-        if (AtualizarAtaqueEspada(&espada, IsMouseButtonPressed(MOUSE_BUTTON_LEFT), dt))
-            IniciarAnimacaoAtaque(&nico);
-        VerificarAcertosEspada(&espada, &nico, &inimigos);
-        if (tempoProtecao > 0.0f) {
-            tempoProtecao -= dt;
+        if (IsKeyPressed(KEY_ESCAPE)) {
+            pausado = !pausado;
         }
 
-        int danoRecebido = AtualizarInimigos(&inimigos, &nico, dt);
-        AplicarDanoJogador(&saudeNico, &tempoProtecao, danoRecebido);
+        if (!pausado) {
+            tempoTotal += tempoQuadro;
 
-        if (saudeNico <= 0) {
-            nico = nicoInicial;
-            saudeNico = SAUDE_MAXIMA;
-            tempoProtecao = 0.0f;
-            InicializarEspada(&espada);
+            float dt = tempoQuadro;
+            if (dt > 1.0f / 30.0f) dt = 1.0f / 30.0f;
 
-            LiberarInimigos(&inimigos);
-            InicializarLista(&inimigos);
-            CriarMarujosDoCais(&inimigos);
+            Rectangle anterior = nico.corpo;
+            AtualizarJogador(&nico, dt);
+            ResolverColisoesCenario(&nico, &fase, anterior);
+            if (AtualizarAtaqueEspada(&espada, IsMouseButtonPressed(MOUSE_BUTTON_LEFT), dt))
+                IniciarAnimacaoAtaque(&nico);
+            VerificarAcertosEspada(&espada, &nico, &inimigos);
+            if (tempoProtecao > 0.0f) {
+                tempoProtecao -= dt;
+            }
+
+            int danoRecebido = AtualizarInimigos(&inimigos, &nico, dt);
+            AplicarDanoJogador(&saudeNico, &tempoProtecao, danoRecebido);
+
+            if (saudeNico <= 0 || nico.corpo.y > fase.limiteQueda) {
+                nico = nicoInicial;
+                saudeNico = SAUDE_MAXIMA;
+                tempoProtecao = 0.0f;
+                InicializarEspada(&espada);
+
+                LiberarInimigos(&inimigos);
+                InicializarLista(&inimigos);
+                CriarMarujosDoCais(&inimigos);
+            }
         }
 
         BeginDrawing();
         ClearBackground((Color){ 16, 43, 58, 255 });
 
         DesenharFase(&fase);
-        DrawText("A / D: mover     ESPACO: pular     MOUSE ESQ: espada     ESC: sair", 24, 24, 22, RAYWHITE);
+        DrawText("A / D: mover     ESPACO: pular     MOUSE ESQ: espada     ESC: pausar", 24, 24, 22, RAYWHITE);
 
         for (int i = 0; i < SAUDE_MAXIMA; i++) {
             DesenharCoracao(24 + i * 40, 56, 4, i < saudeNico);
         }
+
+        int segundos = (int)tempoTotal;
+        DrawText(TextFormat("Tempo: %02d:%02d", segundos / 60, segundos % 60),
+                 24, 96, 22, RAYWHITE);
 
         DesenharInimigos(&inimigos);
         bool nicoVisivel = tempoProtecao <= 0.0f || (int)(tempoProtecao * 10.0f) % 2 == 0;
 
         if (nicoVisivel) {
             DesenharJogador(&nico);
+        }
+
+        if (pausado) {
+            DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.6f));
+
+            const char *titulo = "PAUSADO";
+            const char *dica = "Pressione Esc para continuar";
+            int centroX = GetScreenWidth() / 2;
+            int centroY = GetScreenHeight() / 2;
+
+            DrawText(titulo, centroX - MeasureText(titulo, 40) / 2,
+                     centroY - 35, 40, RAYWHITE);
+            DrawText(dica, centroX - MeasureText(dica, 22) / 2,
+                     centroY + 20, 22, RAYWHITE);
         }
 
         EndDrawing();
