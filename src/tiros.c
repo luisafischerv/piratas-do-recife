@@ -1,0 +1,117 @@
+#include "tiros.h"
+#include "inimigos_ia.h"
+#include <math.h>
+
+#define INTERVALO_PISTOLA 0.35f
+#define VELOCIDADE_TIRO 550.0f
+#define AVISO_ATIRADOR 0.8f
+#define RECARGA_ATIRADOR 1.5f
+
+static bool Disparar(SistemaTiros *s, Rectangle corpo, int direcao, bool jogador)
+{
+    for (int i = 0; i < MAX_TIROS; i++) {
+        if (s->tiros[i].ativo) continue;
+        float x = direcao > 0 ? corpo.x + corpo.width : corpo.x - 12.0f;
+        s->tiros[i] = (Tiro){ {x, corpo.y + corpo.height * 0.45f, 12.0f, 8.0f},
+                              direcao * VELOCIDADE_TIRO, true, jogador };
+        return true;
+    }
+    return false;
+}
+
+void InicializarTiros(SistemaTiros *s) { *s = (SistemaTiros){0}; }
+
+void AtualizarPistola(SistemaTiros *s, const Jogador *j, bool pressionado, float dt)
+{
+    if (s->recarga > 0.0f) s->recarga -= dt;
+    if (pressionado && s->recarga <= 0.0f && Disparar(s, j->corpo, j->direcao, true))
+        s->recarga = INTERVALO_PISTOLA;
+}
+
+Inimigo CriarAtirador(float x, float chaoY)
+{
+    Inimigo i = {0};
+    i.tipo = INIMIGO_ATIRADOR;
+    i.corpo = (Rectangle){x, chaoY - 64.0f, 44.0f, 64.0f};
+    i.direcao = -1;
+    i.saude = 3;
+    i.estado = ESTADO_RECUPERACAO;
+    i.timerEstado = 0.8f;
+    return i;
+}
+
+void AtualizarAtiradores(SistemaTiros *s, ListaInimigos *lista, const Jogador *j, float dt)
+{
+    for (NoInimigo *no = lista->inicio; no; no = no->proximo) {
+        Inimigo *i = &no->dados;
+        if (i->tipo != INIMIGO_ATIRADOR || i->saude <= 0) continue;
+        i->timerEstado -= dt;
+        if (i->estado == ESTADO_PREPARACAO) {
+            // A direcao fica fixa durante o aviso para permitir a esquiva.
+            if (i->timerEstado <= 0.0f) {
+                Disparar(s, i->corpo, i->direcao, false);
+                i->estado = ESTADO_RECUPERACAO;
+                i->timerEstado = RECARGA_ATIRADOR;
+            }
+        } else if (i->timerEstado <= 0.0f &&
+                   fabsf(CentroXRetangulo(j->corpo) - CentroXRetangulo(i->corpo)) < 650.0f &&
+                   fabsf(CentroYRetangulo(j->corpo) - CentroYRetangulo(i->corpo)) < 100.0f) {
+            i->direcao = CentroXRetangulo(j->corpo) >= CentroXRetangulo(i->corpo) ? 1 : -1;
+            i->estado = ESTADO_PREPARACAO;
+            i->timerEstado = AVISO_ATIRADOR;
+        }
+    }
+}
+
+// Distancia percorrida ate o primeiro contato horizontal, evitando atravessar alvos finos.
+static float DistanciaContato(Rectangle tiro, Rectangle alvo, float deslocamento)
+{
+    if (tiro.y + tiro.height <= alvo.y || tiro.y >= alvo.y + alvo.height) return -1.0f;
+    if (RetangulosSobrepostos(tiro, alvo)) return 0.0f;
+    float distancia = deslocamento > 0.0f ? alvo.x - (tiro.x + tiro.width) : tiro.x - (alvo.x + alvo.width);
+    return distancia >= 0.0f && distancia <= fabsf(deslocamento) ? distancia : -1.0f;
+}
+
+int AtualizarTiros(SistemaTiros *s, const Fase *fase, ListaInimigos *lista, const Jogador *j, float dt)
+{
+    int dano = 0;
+    for (int k = 0; k < MAX_TIROS; k++) {
+        Tiro *t = &s->tiros[k];
+        if (!t->ativo) continue;
+        float deslocamento = t->velocidade * dt;
+        float menor = fabsf(deslocamento) + 1.0f;
+        Inimigo *atingido = NULL;
+        bool atingiuJogador = false;
+        for (int p = 0; p < fase->qtdPlataformas; p++) {
+            if (!fase->plataformas[p].ativa) continue;
+            float d = DistanciaContato(t->area, fase->plataformas[p].area, deslocamento);
+            if (d >= 0.0f && d < menor) menor = d;
+        }
+        if (t->doJogador) {
+            for (NoInimigo *no = lista->inicio; no; no = no->proximo) {
+                if (no->dados.saude <= 0) continue;
+                float d = DistanciaContato(t->area, no->dados.corpo, deslocamento);
+                if (d >= 0.0f && d < menor) { menor = d; atingido = &no->dados; }
+            }
+        } else {
+            float d = DistanciaContato(t->area, j->corpo, deslocamento);
+            if (d >= 0.0f && d < menor) { menor = d; atingiuJogador = true; }
+        }
+        if (menor <= fabsf(deslocamento)) {
+            t->ativo = false;
+            if (atingido) { atingido->saude--; atingido->tempoDano = 0.15f; }
+            if (atingiuJogador) dano++;
+        } else {
+            t->area.x += deslocamento;
+            if (t->area.x + t->area.width < 0 || t->area.x > fase->largura) t->ativo = false;
+        }
+    }
+    return dano;
+}
+
+void DesenharTiros(const SistemaTiros *s)
+{
+    for (int i = 0; i < MAX_TIROS; i++)
+        if (s->tiros[i].ativo)
+            DrawRectangleRec(s->tiros[i].area, s->tiros[i].doJogador ? GOLD : RED);
+}
