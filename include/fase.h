@@ -22,6 +22,8 @@ typedef struct Fase {
     Texture2D caixa;
     Texture2D passarela;
     Texture2D cargas;
+    Texture2D raizes;
+    Texture2D plataformaFragil;
 } Fase;
 
 bool CarregarFase(Fase *fase, int id);

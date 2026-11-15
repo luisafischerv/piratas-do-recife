@@ -61,12 +61,19 @@ static void CriarInimigosDaFase(ListaInimigos *inimigos, int faseId)
     if (faseId == 1) {
         CriarMarujosDoCais(inimigos);
     } else if (faseId == 2) {
-        Inimigo marujo = CriarMarujo(850.0f, 620.0f, 500.0f, 1200.0f);
-        marujo.aguardaProximidade = true;
-        InserirInimigo(inimigos, marujo);
-        Inimigo atirador = CriarAtirador(2380.0f, 620.0f);
-        atirador.limiteEsquerdo = 2290.0f;
-        atirador.limiteDireito = 2560.0f;
+        Inimigo atirador = CriarAtirador(1090.0f, 620.0f);
+        atirador.limiteEsquerdo = 1090.0f;
+        atirador.limiteDireito = 1134.0f;
+        atirador.aguardaProximidade = true;
+        InserirInimigo(inimigos, atirador);
+        atirador = CriarAtirador(1500.0f, 620.0f);
+        atirador.limiteEsquerdo = 1500.0f;
+        atirador.limiteDireito = 1544.0f;
+        atirador.aguardaProximidade = true;
+        InserirInimigo(inimigos, atirador);
+        atirador = CriarAtirador(3100.0f, 620.0f);
+        atirador.limiteEsquerdo = 2960.0f;
+        atirador.limiteDireito = 3280.0f;
         atirador.aguardaProximidade = true;
         InserirInimigo(inimigos, atirador);
     }
@@ -169,6 +176,7 @@ int main(void)
     InicializarTiros(&tiros);
 
     int saudeNico = SAUDE_MAXIMA;
+    bool recuperouVidaNaFase = false;
     float tempoProtecao = 0.0f;
     bool pausado = false;
     double tempoTotal = 0.0;
@@ -218,12 +226,26 @@ int main(void)
             if (fase.id == 2) {
                 float direcaoCipo = (float)IsKeyDown(KEY_D) - (float)IsKeyDown(KEY_A);
                 AtualizarCipos(&cipos, &nico, dt, direcaoCipo,
-                               IsKeyPressed(KEY_E), IsKeyPressed(KEY_SPACE));
+                               IsKeyDown(KEY_E), IsKeyPressed(KEY_SPACE));
             }
             if (nico.corpo.x < 0.0f) nico.corpo.x = 0.0f;
             if (nico.corpo.x + nico.corpo.width > fase.largura)
                 nico.corpo.x = fase.largura - nico.corpo.width;
             if (cipos.agarrado < 0) ResolverColisoesCenario(&nico, &fase, anterior);
+            else {
+                // Um cipo nao permite atravessar obstaculos solidos.
+                for (int p = 0; p < fase.qtdPlataformas; p++) {
+                    if (fase.plataformas[p].tipo == PLAT_RAIZ &&
+                        CheckCollisionRecs(nico.corpo, fase.plataformas[p].area)) {
+                        nico.corpo = anterior;
+                        nico.velocidadeY = 0;
+                        cipos.agarrado = -1;
+                        cipos.impulsoX = 0;
+                        cipos.bloqueio = 0.35f;
+                        break;
+                    }
+                }
+            }
             AtualizarPlataformasFrageis(&fase, &nico, dt);
             if (AtualizarAtaqueEspada(&espada, cipos.agarrado < 0 && IsMouseButtonPressed(MOUSE_BUTTON_LEFT), dt))
                 IniciarAnimacaoAtaque(&nico);
@@ -243,16 +265,25 @@ int main(void)
             danoRecebido += AtualizarInimigos(&inimigos, &nico, dt);
             int derrotados = quantidadeAntes - inimigos.quantidade;
             AplicarDanoJogador(&saudeNico, &tempoProtecao, danoRecebido);
-            if (saudeNico > 0 && nico.corpo.y <= fase.limiteQueda) {
-                saudeNico += derrotados;
-                if (saudeNico > SAUDE_MAXIMA) saudeNico = SAUDE_MAXIMA;
+            if (derrotados > 0 && !recuperouVidaNaFase && saudeNico > 0 &&
+                saudeNico < SAUDE_MAXIMA && nico.corpo.y <= fase.limiteQueda) {
+                saudeNico++;
+                recuperouVidaNaFase = true;
             }
 
             if (saudeNico <= 0 || nico.corpo.y > fase.limiteQueda) {
+                for (int i = 0; i < fase.qtdPlataformas; i++) {
+                    if (fase.plataformas[i].tipo == PLAT_FRAGIL) {
+                        fase.plataformas[i].ativa = true;
+                        fase.plataformas[i].estado = PLAT_NORMAL;
+                        fase.plataformas[i].tempoAviso = 0.0f;
+                    }
+                }
                 nico = nicoInicial;
                 nico.corpo.x = fase.pontoInicial.x;
                 nico.corpo.y = fase.pontoInicial.y;
                 saudeNico = SAUDE_MAXIMA;
+                recuperouVidaNaFase = false;
                 tempoProtecao = 0.0f;
                 InicializarEspada(&espada);
                 InicializarTiros(&tiros);
@@ -270,6 +301,7 @@ int main(void)
                     nico.corpo.x = fase.pontoInicial.x;
                     nico.corpo.y = fase.pontoInicial.y;
                     saudeNico = SAUDE_MAXIMA;
+                    recuperouVidaNaFase = false;
                     tempoProtecao = 0.0f;
                     InicializarEspada(&espada);
                     InicializarTiros(&tiros);
@@ -308,9 +340,15 @@ int main(void)
                  "A/D: mover  ESPACO: pular  MOUSE ESQ: espada  DIR: pistola  ESC: pausar",
                  24, 24, 20, RAYWHITE);
         if (fase.id == 2 && nico.corpo.x < 500.0f)
-            DrawText("PISTOLA LIBERADA: segure o botao direito do mouse", 24, 130, 20, GOLD);
+            DrawText("SUBA: pule segurando E; D da embalo; ESPACO solta o cipo", 24, 130, 20, GOLD);
+        if (fase.id == 2 && nico.corpo.x >= 500 && nico.corpo.x < 1010)
+            DrawText("SALTE do cipo ate a plataforma abaixo das raizes!", 24, 130, 20, GOLD);
+        if (fase.id == 2 && nico.corpo.x >= 1010 && nico.corpo.x <= 1450)
+            DrawText("REVIDE: botao direito atira. Use os apoios firmes entre os saltos.", 24, 130, 20, GOLD);
         if (fase.id == 2 && nico.corpo.x > 1450.0f)
-            DrawText("CIPO: pule e pressione E; A/D balancam; ESPACO solta", 24, 130, 20, GOLD);
+            DrawText("CIPOS: segure E para agarrar; A/D dao embalo; ESPACO solta", 24, 130, 20, GOLD);
+        if (fase.id == 2 && nico.corpo.x > 1450.0f && nico.corpo.x < 2960.0f)
+            DrawText("Solte durante a subida para alcancar o proximo cipo!", 24, 158, 18, RAYWHITE);
 
         for (int i = 0; i < SAUDE_MAXIMA; i++) {
             DesenharCoracao(24 + i * 40, 56, 4, i < saudeNico);

@@ -1,4 +1,5 @@
 #include "fase.h"
+#include <math.h>
 
 #define CHAO_Y 620.0f
 
@@ -54,29 +55,38 @@ bool CarregarFase(Fase *f, int id){
         return true;
     }
     if (id == 2) {
-        f->fundo = LoadTexture("assets/images/cenarios/fase2/mangue_fundo_01.png");
-        f->fundo2 = LoadTexture("assets/images/cenarios/fase2/mangue_fundo_02.png");
+        f->fundo = LoadTexture("assets/images/cenarios/fase2/mangue_fundo_01_v2.png");
+        f->fundo2 = LoadTexture("assets/images/cenarios/fase2/mangue_fundo_02_v2.png");
         if (!f->fundo.id || !f->fundo2.id) {
             DescarregarFase(f);
             return false;
         }
         SetTextureFilter(f->fundo, TEXTURE_FILTER_BILINEAR);
         SetTextureFilter(f->fundo2, TEXTURE_FILTER_BILINEAR);
-        // Reutilizados provisoriamente ate criarmos as pecas do mangue.
-        f->chao = LoadTexture("assets/images/cenarios/cais_chao.png");
-        f->passarela = LoadTexture("assets/images/cenarios/cais_passarela.png");
+        f->chao = LoadTexture("assets/images/cenarios/fase2/mangue_plataforma.png");
+        f->passarela = LoadTexture("assets/images/cenarios/fase2/mangue_plataforma.png");
+        f->raizes = LoadTexture("assets/images/cenarios/fase2/raizes_bloqueio_proposta.png");
+        f->plataformaFragil = LoadTexture("assets/images/cenarios/fase2/plataforma_fragil_proposta.png");
         if (f->chao.id) SetTextureFilter(f->chao, TEXTURE_FILTER_BILINEAR);
         if (f->passarela.id) SetTextureFilter(f->passarela, TEXTURE_FILTER_BILINEAR);
+        if (f->raizes.id) SetTextureFilter(f->raizes, TEXTURE_FILTER_BILINEAR);
+        if (f->plataformaFragil.id) SetTextureFilter(f->plataformaFragil, TEXTURE_FILTER_BILINEAR);
         f->largura = 2560.0f;
         f->pontoInicial = (Vector2){100.0f, 400.0f};
         f->limiteQueda = CHAO_Y + 200.0f;
-        AdicionarPlataforma(f, 0.0f, CHAO_Y, 1280.0f, 100.0f, PLAT_CHAO);
-        AdicionarPlataforma(f, 1280.0f, CHAO_Y, 370.0f, 100.0f, PLAT_CHAO);
-        AdicionarPlataforma(f, 1650.0f, CHAO_Y, 130.0f, 20.0f, PLAT_FRAGIL);
-        AdicionarPlataforma(f, 1830.0f, CHAO_Y, 130.0f, 20.0f, PLAT_FRAGIL);
-        AdicionarPlataforma(f, 2010.0f, CHAO_Y, 130.0f, 20.0f, PLAT_FRAGIL);
-        AdicionarPlataforma(f, 2190.0f, CHAO_Y, 100.0f, 20.0f, PLAT_FRAGIL);
-        AdicionarPlataforma(f, 2290.0f, CHAO_Y, 270.0f, 100.0f, PLAT_CHAO);
+        // O trecho de cipos tem espaco para tres transferencias, sem atalhos pelo chao.
+        f->largura = 3280.0f;
+        // Subir, soltar e descer: o teto impede atravessar tudo em um lancamento.
+        AdicionarPlataforma(f, 0, CHAO_Y, 330, 100, PLAT_CHAO);
+        AdicionarPlataforma(f, 580, 570, 90, 250, PLAT_RAIZ);
+        AdicionarPlataforma(f, 790, 0, 150, 450, PLAT_RAIZ);
+        AdicionarPlataforma(f, 855, CHAO_Y, 100, 20, PLAT_FRAGIL);
+        // Apoios firmes permitem responder aos tiros, sem esperar sobre tabuas podres.
+        AdicionarPlataforma(f, 1040, CHAO_Y, 120, 20, PLAT_FIXA);
+        AdicionarPlataforma(f, 1220, 600, 100, 20, PLAT_FRAGIL);
+        AdicionarPlataforma(f, 1400, CHAO_Y, 250, 100, PLAT_CHAO);
+        // Nao ha apoio entre os cipos: ganhar embalo e transferir no ar.
+        AdicionarPlataforma(f, 2960.0f, CHAO_Y, 320.0f, 100.0f, PLAT_CHAO);
         return true;
     }
     return false;
@@ -87,15 +97,57 @@ static void DesenharDetalhe(Texture2D textura, Rectangle origem, Rectangle desti
 }
 
 static void DesenharPlataformaFragil(const Fase *f, const Plataforma *p){
-    Color tom = (Color){ 170, 200, 150, 255 };
+    Color tom = p->estado == PLAT_AVISO ? (Color){255, 130, 90, 255} : (Color){ 170, 200, 150, 255 };
 
-    if (f->passarela.id) {
-        Rectangle origem = { 30, 220, 2110, 375 };
+    if (f->id == 2 && f->plataformaFragil.id) {
+        // Recorta os postes: a superficie das tabuas coincide com o topo do colisor.
+        Rectangle origem = {270, 200, 1620, 455};
+        Rectangle destino = {p->area.x, p->area.y, p->area.width, 55};
+        DrawTexturePro(f->plataformaFragil, origem, destino, (Vector2){0, 0}, 0, tom);
+    } else if (f->passarela.id) {
+        Rectangle origem = f->id == 2 ? (Rectangle){20, 155, 2130, 510} :
+                                      (Rectangle){30, 220, 2110, 375};
         Rectangle destino = p->area;
         destino.height = 70.0f;
         DrawTexturePro(f->passarela, origem, destino, (Vector2){0, 0}, 0.0f, tom);
     } else {
         DrawRectangleRec(p->area, tom);
+    }
+    // Rachaduras permanecem visiveis antes do aviso; o aviso cresce antes da queda.
+    for (int i = 1; i <= 3; i++) {
+        float x = p->area.x + p->area.width * i / 4;
+        DrawLineEx((Vector2){x, p->area.y}, (Vector2){x - 7, p->area.y + 13}, 3, DARKBROWN);
+    }
+    if (p->estado == PLAT_AVISO) {
+        float progresso = 1.0f - p->tempoAviso / 0.6f;
+        if (progresso > 1) progresso = 1;
+        DrawRectangle((int)p->area.x, (int)p->area.y - 6,
+                      (int)(p->area.width * progresso), 4, ORANGE);
+    }
+}
+
+static void DesenharRaizes(Rectangle r)
+{
+    // Massa solida com limite legivel: desenho e colisor ocupam o mesmo retangulo.
+    DrawRectangleRec(r, (Color){49, 39, 29, 255});
+    for (int ramo = 0; ramo < 7; ramo++) {
+        float centro = r.x + 12 + (r.width - 24) * ramo / 6;
+        for (float y = 0; y < r.height; y += 8) {
+            float fim = fminf(y + 8, r.height);
+            float dx = sinf(y * 0.027f + ramo * 1.7f) * 8;
+            float dx2 = sinf(fim * 0.027f + ramo * 1.7f) * 8;
+            Vector2 a = {centro + dx, r.y + y};
+            Vector2 b = {centro + dx2, r.y + fim};
+            DrawLineEx(a, b, 15, (Color){42, 32, 24, 255});
+            DrawLineEx(a, b, 10, (Color){104, 76, 45, 255});
+            a.x -= 2; b.x -= 2;
+            DrawLineEx(a, b, 2, (Color){164, 123, 68, 255});
+        }
+    }
+    for (float y = 12; y < r.height - 12; y += 29) {
+        float x = r.x + 16 + (sinf(y * 0.09f) + 1) * (r.width - 32) / 2;
+        DrawEllipse((int)x, (int)(r.y + y), 11, 4, (Color){63, 97, 43, 255});
+        DrawEllipse((int)x + 4, (int)(r.y + y - 4), 6, 3, (Color){112, 139, 57, 255});
     }
 }
 
@@ -109,7 +161,7 @@ void DesenharFase(const Fase *f) {
     }
     if (f->fundo2.id) {
         Rectangle origem = {0, 0, (float)f->fundo2.width, (float)f->fundo2.height};
-        Rectangle destino = {1280.0f, 0, 1280.0f, (float)GetScreenHeight()};
+        Rectangle destino = {1280.0f, 0, f->largura - 1280.0f, (float)GetScreenHeight()};
         DrawTexturePro(f->fundo2, origem, destino, (Vector2){0, 0}, 0.0f,
                        (Color){165, 165, 175, 255});
     }
@@ -120,6 +172,17 @@ void DesenharFase(const Fase *f) {
     for (int i = 0; i < f->qtdPlataformas; i++) {
         const Plataforma *p = &f->plataformas[i];
         if (!p->ativa) continue;
+        if (p->tipo == PLAT_RAIZ) {
+            if (f->raizes.id) {
+                // Preserva pontas e folhas da arte, que ultrapassam o colisor como decoracao.
+                Rectangle origem = {0, 0, (float)f->raizes.width, (float)f->raizes.height};
+                Rectangle destino = {p->area.x - p->area.width * 0.12f,
+                                     p->area.y - p->area.height * 0.025f,
+                                     p->area.width * 1.24f, p->area.height * 1.05f};
+                DrawTexturePro(f->raizes, origem, destino, (Vector2){0, 0}, 0, WHITE);
+            } else DesenharRaizes(p->area);
+            continue;
+        }
         if (p->tipo == PLAT_FRAGIL) {
             DesenharPlataformaFragil(f, p);
             continue;
@@ -130,7 +193,8 @@ void DesenharFase(const Fase *f) {
         Rectangle destino = p->area;
         if (p->tipo == PLAT_CHAO && f->chao.id) {
             textura = f->chao;
-            origem = (Rectangle){0, 130, 2172, 510};
+            origem = f->id == 2 ? (Rectangle){20, 155, 2130, 510} :
+                                  (Rectangle){0, 130, 2172, 510};
         } else if (p->tipo == PLAT_CAIXA && f->caixa.id) {
             textura = f->caixa;
             origem = (Rectangle){48, 55, 1160, 1160};
@@ -142,7 +206,8 @@ void DesenharFase(const Fase *f) {
             origem = (Rectangle){110, 620, 450, 510};
         } else if (p->tipo == PLAT_FIXA && f->passarela.id) {
             textura = f->passarela;
-            origem = (Rectangle){30, 220, 2110, 375};
+            origem = f->id == 2 ? (Rectangle){20, 155, 2130, 510} :
+                                  (Rectangle){30, 220, 2110, 375};
             // A parte superior coincide com o colisor; suportes sao decorativos.
             destino.height = 70.0f;
         }
@@ -166,8 +231,11 @@ void DescarregarFase(Fase *f) {
     if (f->caixa.id) UnloadTexture(f->caixa);
     if (f->passarela.id) UnloadTexture(f->passarela);
     if (f->cargas.id) UnloadTexture(f->cargas);
+    if (f->raizes.id) UnloadTexture(f->raizes);
+    if (f->plataformaFragil.id) UnloadTexture(f->plataformaFragil);
     f->fundo.id = 0;
     f->fundo2.id = 0;
     f->chao.id = f->caixa.id = f->passarela.id = 0;
     f->cargas.id = 0;
+    f->raizes.id = f->plataformaFragil.id = 0;
 }
