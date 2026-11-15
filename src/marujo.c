@@ -5,7 +5,6 @@
 // Valores EXPERIMENTAIS
 #define MARUJO_LARGURA  44.0f
 #define MARUJO_ALTURA   64.0f
-#define MARUJO_SAUDE    3
 #define MARUJO_VEL_PATRULHA      70.0f   // px por segundo
 #define MARUJO_VEL_APROXIMACAO   125.0f
 #define MARUJO_PERCEPCAO         260.0f  // distancia em que nota o Nico
