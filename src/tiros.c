@@ -50,6 +50,7 @@ void AtualizarAtiradores(SistemaTiros *s, ListaInimigos *lista, const Jogador *j
             // A direcao fica fixa durante o aviso para permitir a esquiva.
             if (i->timerEstado <= 0.0f) {
                 Disparar(s, i->corpo, i->direcao, false);
+                i->golpeJaAcertou = true; // indica que a recuperacao segue um disparo
                 i->estado = ESTADO_RECUPERACAO;
                 i->timerEstado = RECARGA_ATIRADOR;
             }
@@ -58,6 +59,7 @@ void AtualizarAtiradores(SistemaTiros *s, ListaInimigos *lista, const Jogador *j
                    fabsf(CentroYRetangulo(j->corpo) - CentroYRetangulo(i->corpo)) < 100.0f) {
             i->direcao = CentroXRetangulo(j->corpo) >= CentroXRetangulo(i->corpo) ? 1 : -1;
             i->estado = ESTADO_PREPARACAO;
+            i->golpeJaAcertou = false;
             i->timerEstado = AVISO_ATIRADOR;
         }
     }

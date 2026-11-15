@@ -6,15 +6,18 @@
 static Texture2D texturaMarujo;
 static Texture2D texturaAndar;
 static Texture2D texturaAtaque;
+static Texture2D texturaAtirador;
 
 void CarregarVisualInimigos(void)
 {
     texturaMarujo = LoadTexture("assets/images/marujo/marujo_proposta.png");
     texturaAndar = LoadTexture("assets/images/marujo/marujo_andar.png");
     texturaAtaque = LoadTexture("assets/images/marujo/marujo_ataque.png");
+    texturaAtirador = LoadTexture("assets/images/atirador/atirador_sheet.png");
     if (texturaMarujo.id) SetTextureFilter(texturaMarujo, TEXTURE_FILTER_BILINEAR);
     if (texturaAndar.id) SetTextureFilter(texturaAndar, TEXTURE_FILTER_BILINEAR);
     if (texturaAtaque.id) SetTextureFilter(texturaAtaque, TEXTURE_FILTER_BILINEAR);
+    if (texturaAtirador.id) SetTextureFilter(texturaAtirador, TEXTURE_FILTER_BILINEAR);
 }
 
 void DescarregarVisualInimigos(void)
@@ -22,8 +25,10 @@ void DescarregarVisualInimigos(void)
     if (texturaMarujo.id) UnloadTexture(texturaMarujo);
     if (texturaAndar.id) UnloadTexture(texturaAndar);
     if (texturaAtaque.id) UnloadTexture(texturaAtaque);
+    if (texturaAtirador.id) UnloadTexture(texturaAtirador);
     texturaMarujo.id = 0;
     texturaAndar.id = texturaAtaque.id = 0;
+    texturaAtirador.id = 0;
 }
 
 static void DesenharMarujo(const Inimigo *m)
@@ -93,7 +98,32 @@ void DesenharInimigos(const ListaInimigos *lista)
             DesenharMarujo(&no->dados);
             break;
         case INIMIGO_ATIRADOR:
-            DrawRectangleRec(no->dados.corpo, no->dados.tempoDano > 0 ? WHITE : DARKPURPLE);
+            if (texturaAtirador.id) {
+                const Inimigo *at = &no->dados;
+                int quadro = 0;
+                if (at->estado == ESTADO_PREPARACAO) {
+                    quadro = (int)((0.8f - at->timerEstado) * 5.0f);
+                    if (quadro < 0) quadro = 0;
+                    if (quadro > 3) quadro = 3;
+                } else if (at->golpeJaAcertou && at->estado == ESTADO_RECUPERACAO) {
+                    if (at->timerEstado > 1.38f) quadro = 4;
+                    else if (at->timerEstado > 1.15f) quadro = 5;
+                    else if (at->timerEstado > 0.9f) quadro = 6;
+                    else quadro = 7;
+                }
+                float w = (float)texturaAtirador.width / 4.0f;
+                float h = (float)texturaAtirador.height / 2.0f;
+                Rectangle origem = { (quadro % 4) * w, (quadro / 4) * h,
+                                     at->direcao > 0 ? -w : w, h };
+                float altura = 140.0f, largura = altura * w / h;
+                Rectangle destino = { at->corpo.x + at->corpo.width / 2.0f - largura / 2.0f,
+                                      at->corpo.y + at->corpo.height - altura * 0.96f,
+                                      largura, altura };
+                DrawTexturePro(texturaAtirador, origem, destino, (Vector2){0, 0}, 0.0f,
+                               at->tempoDano > 0.0f ? RED : WHITE);
+            } else {
+                DrawRectangleRec(no->dados.corpo, no->dados.tempoDano > 0 ? WHITE : DARKPURPLE);
+            }
             if (no->dados.estado == ESTADO_PREPARACAO) {
                 DrawText("!", (int)no->dados.corpo.x + 14, (int)no->dados.corpo.y - 32, 28, ORANGE);
                 float y = no->dados.corpo.y + no->dados.corpo.height * 0.45f + 4.0f;
