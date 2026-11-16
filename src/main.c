@@ -272,13 +272,7 @@ int main(void)
             }
 
             if (saudeNico <= 0 || nico.corpo.y > fase.limiteQueda) {
-                for (int i = 0; i < fase.qtdPlataformas; i++) {
-                    if (fase.plataformas[i].tipo == PLAT_FRAGIL) {
-                        fase.plataformas[i].ativa = true;
-                        fase.plataformas[i].estado = PLAT_NORMAL;
-                        fase.plataformas[i].tempoAviso = 0.0f;
-                    }
-                }
+                RestaurarPlataformas(&fase);
                 nico = nicoInicial;
                 nico.corpo.x = fase.pontoInicial.x;
                 nico.corpo.y = fase.pontoInicial.y;
