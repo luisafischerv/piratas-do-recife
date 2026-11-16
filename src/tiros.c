@@ -22,6 +22,11 @@ static bool Disparar(SistemaTiros *s, Rectangle corpo, int direcao, bool jogador
 
 void InicializarTiros(SistemaTiros *s) { *s = (SistemaTiros){0}; }
 
+bool DispararTiroInimigo(SistemaTiros *s, Rectangle origem, int direcao)
+{
+    return Disparar(s, origem, direcao, false);
+}
+
 bool AtualizarPistola(SistemaTiros *s, const Jogador *j, bool pressionado, float dt)
 {
     if (s->recarga > 0.0f) s->recarga -= dt;

@@ -6,6 +6,7 @@
 #include "marujo.h"
 #include "interface.h"
 #include "tiros.h"
+#include "eventos.h"
 #include "cipo.h"
 #include <math.h>
 
@@ -174,6 +175,8 @@ int main(void)
     InicializarEspada(&espada);
     SistemaTiros tiros;
     InicializarTiros(&tiros);
+    SequenciaEventos eventos;   // eventos da fase, ordenados por Insertion Sort
+    MontarEventosDaFase(&eventos, fase.id);
 
     int saudeNico = SAUDE_MAXIMA;
     bool recuperouVidaNaFase = false;
@@ -250,6 +253,7 @@ int main(void)
             if (AtualizarAtaqueEspada(&espada, cipos.agarrado < 0 && IsMouseButtonPressed(MOUSE_BUTTON_LEFT), dt))
                 IniciarAnimacaoAtaque(&nico);
             VerificarAcertosEspada(&espada, &nico, &inimigos);
+            ExecutarEventos(&eventos, dt, &inimigos, NULL, 0);
             AtivarInimigosProximos(&inimigos, &nico);
             if (tempoProtecao > 0.0f) {
                 tempoProtecao -= dt;
@@ -286,6 +290,7 @@ int main(void)
                 LiberarInimigos(&inimigos);
                 InicializarLista(&inimigos);
                 CriarInimigosDaFase(&inimigos, fase.id);
+                ReiniciarEventos(&eventos);   // relogio local volta a 0, nada duplica
             } else if (fase.id == 1 && CheckCollisionRecs(nico.corpo, fase.areaSaida)) {
                 Fase proxima = {0};
                 if (CarregarFase(&proxima, 2)) {
@@ -303,6 +308,7 @@ int main(void)
                     LiberarInimigos(&inimigos);
                     InicializarLista(&inimigos);
                     CriarInimigosDaFase(&inimigos, fase.id);
+                    MontarEventosDaFase(&eventos, fase.id);
                 }
             }
         }
