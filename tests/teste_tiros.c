@@ -42,6 +42,22 @@ int main(void)
     AtualizarTiros(&s, &fase, &lista, &j, 1.0f);
     assert(alvo->dados.saude == 2 && Contar(&s) == 0);
 
+    // Tiros devem atingir a parte superior visivel, mas nao o espaco acima dela.
+    InicializarTiros(&s);
+    s.tiros[0] = (Tiro){{180, alvo->dados.corpo.y - 20, 12, 8}, 550, true, true};
+    AtualizarTiros(&s, &fase, &lista, &j, 0.2f);
+    assert(alvo->dados.saude == 1 && !s.tiros[0].ativo);
+    InicializarTiros(&s);
+    s.tiros[0] = (Tiro){{180, alvo->dados.corpo.y - 50, 12, 8}, 550, true, true};
+    AtualizarTiros(&s, &fase, &lista, &j, 0.2f);
+    assert(alvo->dados.saude == 1 && s.tiros[0].ativo);
+    InicializarTiros(&s);
+    s.tiros[0] = (Tiro){{220, j.corpo.y - 20, 12, 8}, -550, true, false};
+    assert(AtualizarTiros(&s, &fase, &lista, &j, 0.2f) == 1);
+    InicializarTiros(&s);
+    s.tiros[0] = (Tiro){{220, j.corpo.y - 50, 12, 8}, -550, true, false};
+    assert(AtualizarTiros(&s, &fase, &lista, &j, 0.2f) == 0 && s.tiros[0].ativo);
+
     InicializarTiros(&s);
     alvo->dados.timerEstado = 0.0f;
     AtualizarAtiradores(&s, &lista, &j, 0.01f);
@@ -50,6 +66,7 @@ int main(void)
     assert(Contar(&s) == 0);
     AtualizarAtiradores(&s, &lista, &j, 0.02f);
     assert(Contar(&s) == 1);
+    assert(fabsf(s.tiros[0].area.y - (alvo->dados.corpo.y + alvo->dados.corpo.height * ALTURA_TIRO_RELATIVA)) < 0.01f);
     assert(AtualizarTiros(&s, &fase, &lista, &j, 1.0f) == 1);
     float xAposDisparo = alvo->dados.corpo.x;
     AtualizarAtiradores(&s, &lista, &j, 0.8f);

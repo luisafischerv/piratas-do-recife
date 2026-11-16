@@ -95,6 +95,15 @@ static float DistanciaContato(Rectangle tiro, Rectangle alvo, float deslocamento
     return distancia >= 0.0f && distancia <= fabsf(deslocamento) ? distancia : -1.0f;
 }
 
+// O corpo usado na movimentacao e menor que a arte. Para tiros, inclui a cabeca
+// e o tronco desenhados acima dele, sem tornar armas e acessorios vulneraveis.
+static Rectangle AreaDanoPorTiro(Rectangle corpo, float extensaoSuperior)
+{
+    corpo.y -= extensaoSuperior;
+    corpo.height += extensaoSuperior;
+    return corpo;
+}
+
 int AtualizarTiros(SistemaTiros *s, const Fase *fase, ListaInimigos *lista, const Jogador *j, float dt)
 {
     int dano = 0;
@@ -113,11 +122,13 @@ int AtualizarTiros(SistemaTiros *s, const Fase *fase, ListaInimigos *lista, cons
         if (t->doJogador) {
             for (NoInimigo *no = lista->inicio; no; no = no->proximo) {
                 if (no->dados.saude <= 0) continue;
-                float d = DistanciaContato(t->area, no->dados.corpo, deslocamento);
+                Rectangle alvo = AreaDanoPorTiro(no->dados.corpo, 30.0f);
+                float d = DistanciaContato(t->area, alvo, deslocamento);
                 if (d >= 0.0f && d < menor) { menor = d; atingido = &no->dados; }
             }
         } else {
-            float d = DistanciaContato(t->area, j->corpo, deslocamento);
+            Rectangle alvo = AreaDanoPorTiro(j->corpo, 30.0f);
+            float d = DistanciaContato(t->area, alvo, deslocamento);
             if (d >= 0.0f && d < menor) { menor = d; atingiuJogador = true; }
         }
         if (menor <= fabsf(deslocamento)) {

@@ -12,7 +12,7 @@ int main(void)
     DescarregarFase(&fase);
     assert(CarregarFase(&fase, 2));
     assert(fase.id == 2 && fase.fundo.id && fase.fundo2.id);
-    assert(fase.largura == 2560.0f && fase.qtdPlataformas > 2);
+    assert(fase.largura == 3280.0f && fase.qtdPlataformas > 2);
     assert(fase.pontoInicial.x >= 0 && fase.pontoInicial.x < fase.largura);
     DescarregarFase(&fase);
     CloseWindow();

@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include "raylib.h"
 #include "plataformas.h"
+#include "jogador.h"
 
 #define MAX_PLATAFORMAS 64
 
@@ -21,10 +22,14 @@ typedef struct Fase {
     Texture2D caixa;
     Texture2D passarela;
     Texture2D cargas;
+    Texture2D raizes;
+    Texture2D plataformaFragil;
 } Fase;
 
 bool CarregarFase(Fase *fase, int id);
 void DesenharFase(const Fase *fase);
 void DescarregarFase(Fase *fase);
+void AtualizarPlataformasFrageis(Fase *fase, const Jogador *jogador, float dt);
+void RestaurarPlataformas(Fase *fase);
 
 #endif
