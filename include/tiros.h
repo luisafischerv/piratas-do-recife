@@ -21,6 +21,8 @@ typedef struct SistemaTiros {
 
 void InicializarTiros(SistemaTiros *sistema);
 bool AtualizarPistola(SistemaTiros *sistema, const Jogador *jogador, bool pressionado, float dt);
+// Tiro horizontal que fere o Nico, saindo da frente de 'origem' (usado pelos canhoes).
+bool DispararTiroInimigo(SistemaTiros *sistema, Rectangle origem, int direcao);
 void AtualizarAtiradores(SistemaTiros *sistema, ListaInimigos *inimigos, const Jogador *jogador, float dt);
 int AtualizarTiros(SistemaTiros *sistema, const Fase *fase, ListaInimigos *inimigos, const Jogador *jogador, float dt);
 void DesenharTiros(const SistemaTiros *sistema);
