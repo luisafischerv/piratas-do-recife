@@ -5,7 +5,8 @@
 #include "inimigos.h"
 
 #define MAX_TIROS 64
-#define ALTURA_TIRO_RELATIVA 0.35f
+// A arte dos personagens ultrapassa o topo do colisor usado para movimento.
+#define ALTURA_TIRO_RELATIVA (-0.10f)
 
 typedef struct Tiro {
     Rectangle area;

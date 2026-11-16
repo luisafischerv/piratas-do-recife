@@ -66,6 +66,7 @@ int main(void)
     assert(Contar(&s) == 0);
     AtualizarAtiradores(&s, &lista, &j, 0.02f);
     assert(Contar(&s) == 1);
+    assert(fabsf(s.tiros[0].area.y - (alvo->dados.corpo.y + alvo->dados.corpo.height * ALTURA_TIRO_RELATIVA)) < 0.01f);
     assert(AtualizarTiros(&s, &fase, &lista, &j, 1.0f) == 1);
     float xAposDisparo = alvo->dados.corpo.x;
     AtualizarAtiradores(&s, &lista, &j, 0.8f);
