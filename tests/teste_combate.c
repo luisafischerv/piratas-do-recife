@@ -12,6 +12,8 @@ static int falhas = 0;
 
 #define DT (1.0f / 60.0f)
 #define CHAO 620.0f
+// Quadros para a recarga da espada passar (45 quadros = 0,75 s; recarga atual = 0,60 s).
+#define QUADROS_RECARGA 45
 
 // Nico "de mentira": so o corpo e a direcao importam para a espada.
 static Jogador NicoEm(float x, int direcao)
@@ -45,7 +47,7 @@ int main(void)
     AtualizarAtaqueEspada(&espada, true, DT);
     CONFERIR(AtualizarAtaqueEspada(&espada, true, DT) == false);  // 1 quadro depois
     CONFERIR(espada.idGolpe == 1);
-    for (int i = 0; i < 20; i++) AtualizarAtaqueEspada(&espada, false, DT); // passa a recarga
+    for (int i = 0; i < QUADROS_RECARGA; i++) AtualizarAtaqueEspada(&espada, false, DT); // passa a recarga
     CONFERIR(AtualizarAtaqueEspada(&espada, true, DT) == true);
     CONFERIR(espada.idGolpe == 2);
 
@@ -65,7 +67,7 @@ int main(void)
     CONFERIR(a->dados.saude == 2 && b->dados.saude == 2);
 
     printf("4) Golpe novo acerta de novo\n");
-    for (int i = 0; i < 20; i++) AtualizarAtaqueEspada(&espada, false, DT);
+    for (int i = 0; i < QUADROS_RECARGA; i++) AtualizarAtaqueEspada(&espada, false, DT);
     AtualizarAtaqueEspada(&espada, true, DT);
     CONFERIR(VerificarAcertosEspada(&espada, &nico, &lista) == 2);
     CONFERIR(a->dados.saude == 1 && b->dados.saude == 1);
@@ -87,7 +89,7 @@ int main(void)
     CONFERIR(direita->dados.saude == 3 && esquerda->dados.saude == 2);
 
     printf("7) Espada inativa nao causa dano\n");
-    for (int i = 0; i < 20; i++) AtualizarAtaqueEspada(&espada, false, DT);
+    for (int i = 0; i < QUADROS_RECARGA; i++) AtualizarAtaqueEspada(&espada, false, DT);
     CONFERIR(!espada.ativa);
     CONFERIR(VerificarAcertosEspada(&espada, &nico, &lista) == 0);
     LiberarInimigos(&lista);
@@ -98,7 +100,7 @@ int main(void)
     InserirInimigo(&lista, MarujoEm(160.0f));
     InicializarEspada(&espada);
     for (int golpe = 0; golpe < 3; golpe++) {        // 3 golpes = saude do marujo
-        for (int i = 0; i < 20; i++) AtualizarAtaqueEspada(&espada, false, DT);
+        for (int i = 0; i < QUADROS_RECARGA; i++) AtualizarAtaqueEspada(&espada, false, DT);
         AtualizarAtaqueEspada(&espada, true, DT);
         VerificarAcertosEspada(&espada, &nico, &lista);
     }
