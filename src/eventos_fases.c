@@ -29,10 +29,10 @@ bool CadastrarDisparoCanhao(SequenciaEventos *seq, float instante, int indiceCan
 // A ordem de cadastro nao precisa seguir o tempo: OrdenarEventos arruma.
 static void EventosDaIlha(SequenciaEventos *seq)
 {
-    CadastrarSurgimentoMarujo(seq, 15.0f, 2440.0f, CHAO_Y, 2300.0f, 2555.0f); // perto da saida
-    CadastrarSurgimentoMarujo(seq,  4.0f, 1150.0f, CHAO_Y,  950.0f, 1640.0f);
-    CadastrarSurgimentoMarujo(seq,  8.0f, 1500.0f, CHAO_Y, 1300.0f, 1645.0f); // empate em t=8:
-    CadastrarSurgimentoMarujo(seq,  8.0f,  600.0f, CHAO_Y,  300.0f, 1000.0f); // fica nesta ordem
+    // Chao firme da ilha: 1400-1650 (antes dos cipos) e 2960-3280 (depois dos cipos).
+    CadastrarSurgimentoMarujo(seq, 15.0f, 3200.0f, CHAO_Y, 2965.0f, 3275.0f); // empate em t=15:
+    CadastrarSurgimentoMarujo(seq,  5.0f, 1600.0f, CHAO_Y, 1405.0f, 1645.0f);
+    CadastrarSurgimentoMarujo(seq, 15.0f, 3000.0f, CHAO_Y, 2965.0f, 3275.0f); // fica nesta ordem
 }
 
 void MontarEventosDaFase(SequenciaEventos *seq, int faseId)
