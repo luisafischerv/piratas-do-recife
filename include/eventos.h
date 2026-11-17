@@ -40,10 +40,4 @@ bool CadastrarSurgimentoMarujo(SequenciaEventos *seq, float instante, float x, f
                                float limiteEsquerdo, float limiteDireito);
 bool CadastrarDisparoCanhao(SequenciaEventos *seq, float instante, int indiceCanhao);
 
-// Monta os eventos de uma fase: cadastra, ordena (Insertion Sort) e zera o relogio.
-// Chamar UMA vez ao carregar a fase. Fase sem eventos fica com a sequencia vazia.
-void MontarEventosDaFase(SequenciaEventos *seq, int faseId);
-// Prototipo do conves horizontal; nao usado pela escalada da fase 3.
-void MontarEventosDoConves(SequenciaEventos *seq);
-
 #endif

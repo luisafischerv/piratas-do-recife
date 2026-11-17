@@ -1,6 +1,22 @@
 #include "canhoes_escalada.h"
 
 static const float faixas[] = {460, 640, 820};
+static Texture2D canhaoVertical;
+static Texture2D balaCanhao;
+
+void CarregarVisualEscalada(void) {
+    canhaoVertical = LoadTexture("assets/images/propostas_combate/canhao_vertical_v3.png");
+    balaCanhao = LoadTexture("assets/images/propostas_combate/bala_canhao.png");
+    if (canhaoVertical.id) SetTextureFilter(canhaoVertical, TEXTURE_FILTER_BILINEAR);
+    if (balaCanhao.id) SetTextureFilter(balaCanhao, TEXTURE_FILTER_BILINEAR);
+}
+
+void DescarregarVisualEscalada(void) {
+    if (canhaoVertical.id) UnloadTexture(canhaoVertical);
+    if (balaCanhao.id) UnloadTexture(balaCanhao);
+    canhaoVertical = (Texture2D){0};
+    balaCanhao = (Texture2D){0};
+}
 
 static void PrepararTrecho(CanhoesEscalada *s, int trecho)
 {
@@ -89,12 +105,22 @@ void DesenharCanhoesEscalada(const CanhoesEscalada *s)
 {
     DesenharCanhoes(s->laterais, CANHOES_ESCALADA_LATERAIS);
     for (int i = 0; i < 3; i++) {
-        DrawRectangle((int)faixas[i] - 20, 1800, 40, 35, DARKGRAY);
-        DrawRectangle((int)faixas[i] - 10, 1780, 20, 25, GRAY);
-        if (s->avisoVertical[i] > 0) {
-            DrawRectangle((int)faixas[i] - 3, 180, 6, 1600, Fade(ORANGE, 0.55f));
-            DrawCircle((int)faixas[i], 1780, 14, ORANGE);
+        if (canhaoVertical.id) {
+            float largura = canhaoVertical.width / 4.0f;
+            float tempoVoo = (1800.0f - s->yBala[i]) / 850.0f;
+            int quadro = !s->balaAtiva[i] ? 0 : tempoVoo < 0.15f ? 1 : tempoVoo < 0.35f ? 2 : tempoVoo < 0.6f ? 3 : 0;
+            Rectangle origem = {quadro * largura, 0, largura, canhaoVertical.height};
+            DrawTexturePro(canhaoVertical, origem, (Rectangle){faixas[i] - 82, 1640, 164, 225}, (Vector2){0, 0}, 0, WHITE);
+        } else {
+            DrawRectangle((int)faixas[i] - 20, 1800, 40, 35, DARKGRAY);
         }
-        if (s->balaAtiva[i]) DrawCircle((int)faixas[i], (int)s->yBala[i], 12, ORANGE);
+        if (s->avisoVertical[i] > 0)
+            DrawRectangle((int)faixas[i] - 4, 180, 8, 1600, (Color){255, 0, 0, 230});
+        if (s->balaAtiva[i]) {
+            if (balaCanhao.id)
+                DrawTexturePro(balaCanhao, (Rectangle){430, 180, 680, 680},
+                               (Rectangle){faixas[i] - 12, s->yBala[i], 24, 24}, (Vector2){0, 0}, 0, WHITE);
+            else DrawCircle((int)faixas[i], (int)s->yBala[i], 12, DARKGRAY);
+        }
     }
 }

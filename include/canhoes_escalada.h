@@ -19,5 +19,7 @@ typedef struct CanhoesEscalada {
 } CanhoesEscalada;
 void ReiniciarCanhoesEscalada(CanhoesEscalada *s);
 int AtualizarCanhoesEscalada(CanhoesEscalada *s, SistemaTiros *tiros, ListaInimigos *inimigos, const Jogador *j, float dt);
+void CarregarVisualEscalada(void);
+void DescarregarVisualEscalada(void);
 void DesenharCanhoesEscalada(const CanhoesEscalada *s);
 #endif

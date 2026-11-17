@@ -14,7 +14,7 @@ static bool Disparar(SistemaTiros *s, Rectangle corpo, int direcao, bool jogador
         if (s->tiros[i].ativo) continue;
         float x = direcao > 0 ? corpo.x + corpo.width : corpo.x - 12.0f;
         s->tiros[i] = (Tiro){ {x, corpo.y + corpo.height * ALTURA_TIRO_RELATIVA, 12.0f, 8.0f},
-                              direcao * velocidade, true, jogador };
+                              direcao * velocidade, true, jogador, false };
         return true;
     }
     return false;
@@ -29,7 +29,14 @@ bool DispararTiroInimigo(SistemaTiros *s, Rectangle origem, int direcao)
 
 bool DispararTiroInimigoComVelocidade(SistemaTiros *s, Rectangle origem, int direcao, float velocidade)
 {
-    return Disparar(s, origem, direcao, false, velocidade > 0 ? velocidade : VELOCIDADE_TIRO);
+    for (int i = 0; i < MAX_TIROS; i++) {
+        if (!s->tiros[i].ativo) {
+            bool disparou = Disparar(s, origem, direcao, false, velocidade > 0 ? velocidade : VELOCIDADE_TIRO);
+            if (disparou) s->tiros[i].deCanhao = true;
+            return disparou;
+        }
+    }
+    return false;
 }
 
 bool AtualizarPistola(SistemaTiros *s, const Jogador *j, bool pressionado, float dt)

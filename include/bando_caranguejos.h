@@ -14,5 +14,7 @@ typedef struct BandoCaranguejos {
 
 void ReiniciarBando(BandoCaranguejos *b);
 int AtualizarBando(BandoCaranguejos *b, const Jogador *j, int estagio, float dt);
+void CarregarVisualBando(void);
+void DescarregarVisualBando(void);
 void DesenharBando(const BandoCaranguejos *b);
 #endif

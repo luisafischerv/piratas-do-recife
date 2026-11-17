@@ -7,8 +7,7 @@
 
 typedef enum TipoInimigo {
     INIMIGO_MARUJO,
-    INIMIGO_ATIRADOR,
-    INIMIGO_CARANGUEJO
+    INIMIGO_ATIRADOR
 } TipoInimigo;
 
 typedef enum EstadoInimigo {

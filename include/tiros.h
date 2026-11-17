@@ -13,6 +13,7 @@ typedef struct Tiro {
     float velocidade;
     bool ativo;
     bool doJogador;
+    bool deCanhao;
 } Tiro;
 
 typedef struct SistemaTiros {

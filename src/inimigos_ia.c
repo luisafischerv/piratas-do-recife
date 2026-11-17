@@ -1,6 +1,5 @@
 #include "inimigos_ia.h"
 #include "marujo.h"
-#include "caranguejo.h"
 
 bool RetangulosSobrepostos(Rectangle a, Rectangle b)
 {
@@ -44,9 +43,6 @@ int AtualizarInimigos(ListaInimigos *lista, const Jogador *jogador, float dt)
             switch (inimigo->tipo) {
             case INIMIGO_MARUJO:
                 danoTotal += AtualizarMarujo(inimigo, jogador, dt);
-                break;
-            case INIMIGO_CARANGUEJO:
-                danoTotal += AtualizarCaranguejo(inimigo, jogador, dt);
                 break;
             case INIMIGO_ATIRADOR:
                 // Atualizado pela AtualizarAtiradores (tiros.c, Pessoa 1),

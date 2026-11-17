@@ -66,20 +66,3 @@ void ReiniciarCanhoes(Canhao canhoes[], int quantidade, bool disparoCanhao[])
     }
 }
 
-// Navio (fase 3) - POSICOES PROVISORIAS: ajustar quando a Pessoa 2 criar o convés.
-// Supoe convés continuo com o chao em y = 620. Os canhoes ficam a frente do
-// caminho do Nico e atiram para a esquerda, na direcao de onde ele vem.
-#define NAVIO_CHAO_Y 620.0f
-
-void MontarCanhoesDaFase(CanhoesDaFase *c, int faseId)
-{
-    c->quantidade = 0;
-    for (int i = 0; i < MAX_CANHOES; i++) c->pedidos[i] = false;
-
-    if (faseId == 3) {
-        c->lista[0] = CriarCanhao(1150.0f, NAVIO_CHAO_Y, -1);   // indice 0
-        c->lista[1] = CriarCanhao(2050.0f, NAVIO_CHAO_Y, -1);   // indice 1
-        c->lista[2] = CriarCanhao(2950.0f, NAVIO_CHAO_Y, -1);   // indice 2
-        c->quantidade = 3;
-    }
-}

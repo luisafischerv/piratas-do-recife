@@ -6,7 +6,6 @@
 #include "marujo.h"
 #include "interface.h"
 #include "tiros.h"
-#include "eventos.h"
 #include "cipo.h"
 #include "cordas.h"
 #include "canhoes_escalada.h"
@@ -125,10 +124,11 @@ static void DesenharTelaInicial(Texture2D fundoInicial) {
         yDica = GetScreenHeight() - 65;
     }
 
-    DrawText(titulo, centroX - MeasureText(titulo, 56) / 2,
-             yTitulo, 56, GOLD);
-    DrawText(subtitulo, centroX - MeasureText(subtitulo, 30) / 2,
-             ySubtitulo, 30, RAYWHITE);
+    if (!fundoInicial.id) {
+        DrawText(titulo, centroX - MeasureText(titulo, 56) / 2, yTitulo, 56, GOLD);
+        DrawText(subtitulo, centroX - MeasureText(subtitulo, 30) / 2, ySubtitulo, 30, RAYWHITE);
+    }
+    DrawRectangle(centroX - 190, yDica - 10, 380, 45, Fade(BLACK, 0.7f));
     DrawText(dica, centroX - MeasureText(dica, 24) / 2,
              yDica, 24, RAYWHITE);
 }
@@ -163,13 +163,17 @@ int main(void)
     InitWindow(1280, 720, "Piratas do Recife: A Maldicao da Mare Negra");
     SetTargetFPS(60);
     SetExitKey(KEY_NULL);
-    Texture2D fundoInicial = LoadTexture("assets/images/tela_inicial.png");
+    Texture2D fundoInicial = LoadTexture("assets/images/capa_nova_proposta.png");
+    Texture2D fundoIntroducao = LoadTexture("assets/images/tela_inicial.png");
     Avelino avelino;
     CarregarAvelino(&avelino);
     BandoCaranguejos bando;
     ReiniciarBando(&bando);
     CarregarVisualInimigos();
     CarregarVisualTiros();
+    CarregarVisualCanhoes();
+    CarregarVisualEscalada();
+    CarregarVisualBando();
     SistemaCipos cipos;
     CarregarCipos(&cipos);
     SistemaCordas cordas;
@@ -191,8 +195,6 @@ int main(void)
     InicializarEspada(&espada);
     SistemaTiros tiros;
     InicializarTiros(&tiros);
-    SequenciaEventos eventos;   // eventos da fase, ordenados por Insertion Sort
-    MontarEventosDaFase(&eventos, fase.id);
 
     int saudeNico = SAUDE_MAXIMA;
     float tempoProtecao = 0.0f;
@@ -222,7 +224,7 @@ int main(void)
 
             BeginDrawing();
             ClearBackground((Color){ 16, 43, 58, 255 });
-            DesenharIntroducao(fundoInicial);
+            DesenharIntroducao(fundoIntroducao);
             EndDrawing();
             continue;
         }
@@ -292,7 +294,6 @@ int main(void)
             if (AtualizarAtaqueEspada(&espada, cipos.agarrado < 0 && IsMouseButtonPressed(MOUSE_BUTTON_LEFT), dt))
                 IniciarAnimacaoAtaque(&nico);
             VerificarAcertosEspada(&espada, &nico, &inimigos);
-            ExecutarEventos(&eventos, dt, &inimigos, NULL, 0);
             AtivarInimigosProximos(&inimigos, &nico);
             if (tempoProtecao > 0.0f) {
                 tempoProtecao -= dt;
@@ -345,7 +346,6 @@ int main(void)
                 LiberarInimigos(&inimigos);
                 InicializarLista(&inimigos);
                 CriarInimigosDaFase(&inimigos, fase.id);
-                ReiniciarEventos(&eventos);   // relogio local volta a 0, nada duplica
             } else if (destinoTeste != 0 ||
                        ((fase.id == 1 || fase.id == 2) && CheckCollisionRecs(nico.corpo, fase.areaSaida)) ||
                        (fase.id == 3 && nico.corpo.y <= 200)) {
@@ -370,7 +370,6 @@ int main(void)
                     LiberarInimigos(&inimigos);
                     InicializarLista(&inimigos);
                     CriarInimigosDaFase(&inimigos, fase.id);
-                    MontarEventosDaFase(&eventos, fase.id);
                 }
             }
         }
@@ -425,8 +424,6 @@ int main(void)
             DrawText("Solte durante a subida para alcancar o proximo cipo!", 24, 158, 18, RAYWHITE);
         if (fase.id == 3)
             DrawText("E: agarrar  W/S: subir/descer  A/D + ESPACO: saltar", 24, 130, 20, GOLD);
-        if (fase.id == 4)
-            DrawText("ARENA DO CHEFE - batalha em desenvolvimento", 24, 130, 20, GOLD);
 
         for (int i = 0; i < SAUDE_MAXIMA; i++) {
             DesenharCoracao(24 + i * 40, 56, 4, i < saudeNico);
@@ -458,9 +455,13 @@ int main(void)
     DescarregarAvelino(&avelino);
     DescarregarVisualInimigos();
     DescarregarVisualTiros();
+    DescarregarVisualCanhoes();
+    DescarregarVisualEscalada();
+    DescarregarVisualBando();
     DescarregarCipos(&cipos);
     DescarregarCordas(&cordas);
     DescarregarJogador(&nico);
+    if (fundoIntroducao.id) UnloadTexture(fundoIntroducao);
     if (fundoInicial.id != 0) {
         UnloadTexture(fundoInicial);
     }

@@ -2,6 +2,18 @@
 
 #define LARGURA_ARENA 1280.0f
 
+static Texture2D texturaCaranguejo;
+
+void CarregarVisualBando(void) {
+    texturaCaranguejo = LoadTexture("assets/images/propostas_combate/caranguejo.png");
+    if (texturaCaranguejo.id) SetTextureFilter(texturaCaranguejo, TEXTURE_FILTER_BILINEAR);
+}
+
+void DescarregarVisualBando(void) {
+    if (texturaCaranguejo.id) UnloadTexture(texturaCaranguejo);
+    texturaCaranguejo = (Texture2D){0};
+}
+
 
 void ReiniciarBando(BandoCaranguejos *b) {
     *b = (BandoCaranguejos){0};
@@ -55,15 +67,14 @@ void DesenharBando(const BandoCaranguejos *b) {
     if (!b->ativo) return;
     for (int i = 0; i < b->quantidade; i++) {
         Rectangle r = b->corpos[i];
-        float cx = r.x + r.width / 2, base = r.y + r.height;
-        for (int lado = -1; lado <= 1; lado += 2) {
-            for (int k = 0; k < 3; k++)
-                DrawLineEx((Vector2){cx + lado * (8 + k * 6), base - 10},
-                           (Vector2){cx + lado * (14 + k * 6), base}, 3, MAROON);
-            DrawCircle((int)(cx + lado * 24), (int)(base - 19), 6, MAROON);
+        if (!texturaCaranguejo.id) {
+            DrawEllipse((int)(r.x + r.width / 2), (int)(r.y + r.height / 2), 22, 13, MAROON);
+            continue;
         }
-        DrawEllipse((int)cx, (int)(base - 14), 22, 13, (Color){196, 72, 48, 255});
-        DrawCircle((int)cx - 6, (int)(base - 26), 3, RAYWHITE);
-        DrawCircle((int)cx + 6, (int)(base - 26), 3, RAYWHITE);
+        float largura = texturaCaranguejo.width / 4.0f;
+        int quadro = (int)(GetTime() * 8.0) % 4;
+        Rectangle origem = {quadro * largura, 0, DirecaoDoCaranguejo(b, i) > 0 ? largura : -largura, texturaCaranguejo.height};
+        Rectangle destino = {r.x - 14, r.y - 27, r.width + 28, r.height + 40};
+        DrawTexturePro(texturaCaranguejo, origem, destino, (Vector2){0, 0}, 0, WHITE);
     }
 }
