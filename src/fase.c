@@ -110,7 +110,16 @@ static void DesenharDetalhe(Texture2D textura, Rectangle origem, Rectangle desti
 }
 
 static void DesenharPlataformaFragil(const Fase *f, const Plataforma *p){
-    Color tom = p->estado == PLAT_AVISO ? (Color){255, 130, 90, 255} : (Color){ 170, 200, 150, 255 };
+    Plataforma visual = *p;
+    Color tom = (Color){170, 200, 150, 255};
+    if (p->estado == PLAT_AVISO) {
+        float progresso = fminf(1.0f, fmaxf(0.0f, 1.0f - p->tempoAviso / TEMPO_AVISO_FRAGIL));
+        visual.area.x += sinf((float)GetTime() * 60.0f) * 4.0f * progresso;
+        tom = (Color){(unsigned char)(170 + 70 * progresso),
+                      (unsigned char)(200 - 120 * progresso),
+                      (unsigned char)(150 - 100 * progresso), 255};
+    }
+    p = &visual; // Tremor visual sem deslocar o colisor.
 
     if (f->id == 2 && f->plataformaFragil.id) {
         // Recorta os postes: a superficie das tabuas coincide com o topo do colisor.
