@@ -8,13 +8,13 @@
 #define RECARGA_ATIRADOR 1.5f
 #define VELOCIDADE_ATIRADOR 60.0f
 
-static bool Disparar(SistemaTiros *s, Rectangle corpo, int direcao, bool jogador)
+static bool Disparar(SistemaTiros *s, Rectangle corpo, int direcao, bool jogador, float velocidade)
 {
     for (int i = 0; i < MAX_TIROS; i++) {
         if (s->tiros[i].ativo) continue;
         float x = direcao > 0 ? corpo.x + corpo.width : corpo.x - 12.0f;
         s->tiros[i] = (Tiro){ {x, corpo.y + corpo.height * ALTURA_TIRO_RELATIVA, 12.0f, 8.0f},
-                              direcao * VELOCIDADE_TIRO, true, jogador };
+                              direcao * velocidade, true, jogador };
         return true;
     }
     return false;
@@ -22,10 +22,20 @@ static bool Disparar(SistemaTiros *s, Rectangle corpo, int direcao, bool jogador
 
 void InicializarTiros(SistemaTiros *s) { *s = (SistemaTiros){0}; }
 
+bool DispararTiroInimigo(SistemaTiros *s, Rectangle origem, int direcao)
+{
+    return Disparar(s, origem, direcao, false, VELOCIDADE_TIRO);
+}
+
+bool DispararTiroInimigoComVelocidade(SistemaTiros *s, Rectangle origem, int direcao, float velocidade)
+{
+    return Disparar(s, origem, direcao, false, velocidade > 0 ? velocidade : VELOCIDADE_TIRO);
+}
+
 bool AtualizarPistola(SistemaTiros *s, const Jogador *j, bool pressionado, float dt)
 {
     if (s->recarga > 0.0f) s->recarga -= dt;
-    if (pressionado && s->recarga <= 0.0f && Disparar(s, j->corpo, j->direcao, true)) {
+    if (pressionado && s->recarga <= 0.0f && Disparar(s, j->corpo, j->direcao, true, VELOCIDADE_TIRO)) {
         s->recarga = INTERVALO_PISTOLA;
         return true;
     }
@@ -56,7 +66,7 @@ void AtualizarAtiradores(SistemaTiros *s, ListaInimigos *lista, const Jogador *j
         if (i->estado == ESTADO_PREPARACAO) {
             // A direcao fica fixa durante o aviso para permitir a esquiva.
             if (i->timerEstado <= 0.0f) {
-                Disparar(s, i->corpo, i->direcao, false);
+                Disparar(s, i->corpo, i->direcao, false, VELOCIDADE_TIRO);
                 i->golpeJaAcertou = true; // indica que a recuperacao segue um disparo
                 i->estado = ESTADO_RECUPERACAO;
                 i->timerEstado = RECARGA_ATIRADOR;

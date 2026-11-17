@@ -45,10 +45,12 @@ int AtualizarInimigos(ListaInimigos *lista, const Jogador *jogador, float dt)
             case INIMIGO_MARUJO:
                 danoTotal += AtualizarMarujo(inimigo, jogador, dt);
                 break;
-            case INIMIGO_ATIRADOR:
-                break;
             case INIMIGO_CARANGUEJO:
                 danoTotal += AtualizarCaranguejo(inimigo, jogador, dt);
+                break;
+            case INIMIGO_ATIRADOR:
+                // Atualizado pela AtualizarAtiradores (tiros.c, Pessoa 1),
+                // porque precisa do sistema de tiros para disparar.
                 break;
             }
         }

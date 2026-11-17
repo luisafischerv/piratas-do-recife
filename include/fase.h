@@ -7,6 +7,7 @@
 #include "jogador.h"
 
 #define MAX_PLATAFORMAS 64
+#define TEMPO_AVISO_FRAGIL 0.6f
 
 typedef struct Fase {
     int id;

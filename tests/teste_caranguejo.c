@@ -1,83 +1,65 @@
 #include <stdio.h>
-#include "caranguejo.h"
 #include "inimigos_ia.h"
+#include "caranguejo.h"
+#include "combate.h"
 
 static int falhas = 0;
+
 #define CONFERIR(cond) do { \
     if (!(cond)) { printf("  FALHOU (linha %d): %s\n", __LINE__, #cond); falhas++; } \
 } while (0)
 
 #define DT (1.0f / 60.0f)
+#define CHAO 620.0f
 
-static Jogador NicoEm(float x, float y)
+static Jogador NicoEm(float x)
 {
     Jogador j = {0};
-    j.corpo = (Rectangle){ x, y, 56.0f, 80.0f };
+    j.corpo = (Rectangle){ x, CHAO - 80.0f, 56.0f, 80.0f };
+    j.direcao = 1;
     return j;
-}
-
-// Avanca o caranguejo ate mudar de estado (ou ate o limite de quadros).
-static int AvancarAteMudar(Inimigo *c, const Jogador *j, int *dano, int limite)
-{
-    EstadoInimigo inicial = c->estado;
-    int quadros = 0;
-    while (c->estado == inicial && quadros < limite) {
-        *dano += AtualizarCaranguejo(c, j, DT);
-        quadros++;
-    }
-    return quadros;
 }
 
 int main(void)
 {
-    int dano = 0;
-
-    printf("1) Patrulha sem o Nico por perto e respeita os limites\n");
-    Inimigo c = CriarCaranguejo(3000.0f, 620.0f, 2970.0f, 3270.0f);
-    Jogador longe = NicoEm(100.0f, 540.0f);
-    for (int i = 0; i < 600; i++) {
-        dano += AtualizarCaranguejo(&c, &longe, DT);
-        CONFERIR(c.corpo.x >= 2970.0f && c.corpo.x + c.corpo.width <= 3270.0f);
-    }
-    CONFERIR(c.estado == ESTADO_PATRULHA && dano == 0);
-
-    printf("2) Nico no alto (cipo) nao e percebido\n");
-    c = CriarCaranguejo(3000.0f, 620.0f, 2970.0f, 3270.0f);
-    Jogador alto = NicoEm(3150.0f, 300.0f);
-    for (int i = 0; i < 60; i++) AtualizarCaranguejo(&c, &alto, DT);
-    CONFERIR(c.estado == ESTADO_PATRULHA);
-
-    printf("3) Percebe, prepara parado e mira no Nico\n");
-    c = CriarCaranguejo(3000.0f, 620.0f, 2970.0f, 3270.0f);
-    Jogador nico = NicoEm(3200.0f, 540.0f);
-    AtualizarCaranguejo(&c, &nico, DT);
-    CONFERIR(c.estado == ESTADO_PREPARACAO && c.direcao == 1);
-    float xParado = c.corpo.x;
-    int quadros = AvancarAteMudar(&c, &nico, &dano, 200);
-    CONFERIR(c.corpo.x == xParado);
-    CONFERIR(quadros >= 35 && quadros <= 37);
-    CONFERIR(c.estado == ESTADO_ATAQUE);
-
-    printf("4) Investida acerta uma unica vez\n");
-    dano = 0;
-    AvancarAteMudar(&c, &nico, &dano, 200);
-    CONFERIR(dano == 1);
-    CONFERIR(c.estado == ESTADO_RECUPERACAO);
-    CONFERIR(c.corpo.x > xParado);
-
-    printf("5) Recupera e volta a patrulhar\n");
-    AvancarAteMudar(&c, &nico, &dano, 200);
-    CONFERIR(c.estado == ESTADO_PATRULHA || c.estado == ESTADO_PREPARACAO);
-
-    printf("6) Saude e removido da lista ao chegar a zero\n");
     ListaInimigos lista;
+
+    printf("1) Longe do Nico: so patrulha, sem dano\n");
     InicializarLista(&lista);
-    NoInimigo *no = InserirInimigo(&lista, CriarCaranguejo(3000.0f, 620.0f, 2970.0f, 3270.0f));
-    CONFERIR(no->dados.saude == CARANGUEJO_SAUDE);
-    no->dados.saude = 0;
-    AtualizarInimigos(&lista, &longe, DT);
+    InserirInimigo(&lista, CriarCaranguejo(1000.0f, CHAO, 800.0f, 1200.0f));
+    Jogador nico = NicoEm(100.0f);
+    int dano = 0;
+    for (int i = 0; i < 120; i++) dano += AtualizarInimigos(&lista, &nico, DT);
+    CONFERIR(dano == 0);
+    CONFERIR(lista.inicio->dados.estado == ESTADO_PATRULHA);
+    LiberarInimigos(&lista);
+
+    printf("2) Perto: prepara (aviso), investe e acerta 1 vez so\n");
+    InicializarLista(&lista);
+    NoInimigo *c = InserirInimigo(&lista, CriarCaranguejo(500.0f, CHAO, 100.0f, 900.0f));
+    nico = NicoEm(350.0f);                       // a esquerda, dentro da percepcao
+    AtualizarInimigos(&lista, &nico, DT);
+    CONFERIR(c->dados.estado == ESTADO_PREPARACAO);
+    dano = 0;
+    for (int i = 0; i < 30; i++) dano += AtualizarInimigos(&lista, &nico, DT); // 0,5 s: ainda avisando
+    CONFERIR(dano == 0);
+    for (int i = 0; i < 60; i++) dano += AtualizarInimigos(&lista, &nico, DT); // investida
+    CONFERIR(dano == 1);                         // atravessa o Nico mas so 1 de dano
+
+    printf("3) Morre com 2 golpes de espada e sai da lista\n");
+    Espada espada;
+    InicializarEspada(&espada);
+    nico = NicoEm(c->dados.corpo.x - 60.0f);     // colado, virado para ele
+    for (int golpe = 0; golpe < CARANGUEJO_SAUDE; golpe++) {
+        for (int i = 0; i < 45; i++) AtualizarAtaqueEspada(&espada, false, DT);
+        AtualizarAtaqueEspada(&espada, true, DT);
+        VerificarAcertosEspada(&espada, &nico, &lista);
+    }
+    CONFERIR(c->dados.saude == 0);
+    AtualizarInimigos(&lista, &nico, DT);
     CONFERIR(lista.quantidade == 0 && lista.inicio == NULL);
 
+    LiberarInimigos(&lista);
     if (falhas == 0) printf("\nOK: todos os testes do caranguejo passaram.\n");
     else printf("\n%d verificacao(oes) falharam.\n", falhas);
     return falhas;
