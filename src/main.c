@@ -4,6 +4,7 @@
 #include "combate.h"
 #include "inimigos_ia.h"
 #include "marujo.h"
+#include "caranguejo.h"
 #include "interface.h"
 #include "tiros.h"
 #include "eventos.h"
@@ -43,11 +44,9 @@ static void CriarMarujosDoCais(ListaInimigos *inimigos){
     atirador.limiteDireito = 1860.0f;
     atirador.aguardaProximidade = true;
     InserirInimigo(inimigos, atirador);
-    // Marujo patrulha o espaco aberto sob as passarelas da segunda tela.
     marujo = CriarMarujo(1870.0f, 620.0f, 1570.0f, 2050.0f);
     marujo.aguardaProximidade = true;
     InserirInimigo(inimigos, marujo);
-    // Segundo atirador elevado fica limitado a passarela mais alta.
     atirador = CriarAtirador(2000.0f, 435.0f);
     atirador.limiteEsquerdo = 1950.0f;
     atirador.limiteDireito = 2120.0f;
@@ -75,6 +74,9 @@ static void CriarInimigosDaFase(ListaInimigos *inimigos, int faseId)
         atirador.limiteDireito = 1544.0f;
         atirador.aguardaProximidade = true;
         InserirInimigo(inimigos, atirador);
+        Inimigo caranguejo = CriarCaranguejo(3000.0f, 620.0f, 2970.0f, 3270.0f);
+        caranguejo.aguardaProximidade = true;
+        InserirInimigo(inimigos, caranguejo);
         atirador = CriarAtirador(3100.0f, 620.0f);
         atirador.limiteEsquerdo = 2960.0f;
         atirador.limiteDireito = 3280.0f;
@@ -309,7 +311,13 @@ int main(void)
             }
 
             if (saudeNico <= 0 || nico.corpo.y > fase.limiteQueda) {
-                RestaurarPlataformas(&fase);
+                for (int i = 0; i < fase.qtdPlataformas; i++) {
+                    if (fase.plataformas[i].tipo == PLAT_FRAGIL) {
+                        fase.plataformas[i].ativa = true;
+                        fase.plataformas[i].estado = PLAT_NORMAL;
+                        fase.plataformas[i].tempoAviso = 0.0f;
+                    }
+                }
                 nico = nicoInicial;
                 nico.corpo.x = fase.pontoInicial.x;
                 nico.corpo.y = fase.pontoInicial.y;
