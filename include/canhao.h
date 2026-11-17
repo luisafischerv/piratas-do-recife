@@ -21,7 +21,19 @@ typedef struct Canhao {
     float velocidadeTiro;
 } Canhao;
 
+// Os canhoes de uma fase juntos com os pedidos de disparo, para o
+// main.c e o reinicio nunca esquecerem uma das partes.
+typedef struct CanhoesDaFase {
+    Canhao lista[MAX_CANHOES];
+    bool pedidos[MAX_CANHOES];   // marcados pela ExecutarEventos
+    int quantidade;              // 0 nas fases sem canhao
+} CanhoesDaFase;
+
 Canhao CriarCanhao(float x, float chaoY, int direcao);
+
+// Posiciona os canhoes da fase (so o navio tem). Chamar ao carregar a fase.
+// O indice de cada canhao e o mesmo usado nos eventos (eventos_fases.c).
+void MontarCanhoesDaFase(CanhoesDaFase *canhoes, int faseId);
 
 // Le os pedidos que a ExecutarEventos marcou em disparoCanhao[i]:
 // canhao parado com pedido -> comeca o aviso e limpa a marca.

@@ -1,7 +1,7 @@
 #include <math.h>
 #include "fase.h"
 
-#define TEMPO_AVISO_FRAGIL 0.6f
+
 
 static bool NicoPisando(const Jogador *j, Rectangle p){
     float pesY = j->corpo.y + j->corpo.height;

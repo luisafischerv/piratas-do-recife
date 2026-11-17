@@ -113,8 +113,48 @@ int main(void)
     CONFERIR(seq.quantidade > 0 && seq.proximo == 0 && seq.relogio == 0.0f);
     for (int i = 1; i < seq.quantidade; i++)
         CONFERIR(seq.eventos[i - 1].instante <= seq.eventos[i].instante);
-
     LiberarInimigos(&lista);
+
+    printf("9) Navio: so ele tem canhoes; eventos ordenados e indices validos\n");
+    CanhoesDaFase canhoes;
+    MontarCanhoesDaFase(&canhoes, 1);
+    CONFERIR(canhoes.quantidade == 0);
+    MontarCanhoesDaFase(&canhoes, 2);
+    CONFERIR(canhoes.quantidade == 0);
+    MontarCanhoesDaFase(&canhoes, 3);
+    CONFERIR(canhoes.quantidade == 3);
+    MontarEventosDaFase(&seq, 3);
+    CONFERIR(seq.quantidade == 0); // Escalada nao recebe eventos do conves.
+    MontarEventosDoConves(&seq);
+    int disparosCadastrados = 0, marujosCadastrados = 0;
+    for (int i = 0; i < seq.quantidade; i++) {
+        const Evento *e = &seq.eventos[i];
+        if (i > 0) CONFERIR(seq.eventos[i - 1].instante <= e->instante);
+        if (i > 0 && seq.eventos[i - 1].instante == e->instante)   // empate: ordem de cadastro
+            CONFERIR(seq.eventos[i - 1].ordemCadastro < e->ordemCadastro);
+        if (e->tipo == EVENTO_DISPARO_CANHAO) {
+            CONFERIR(e->indiceCanhao >= 0 && e->indiceCanhao < canhoes.quantidade);
+            disparosCadastrados++;
+        } else {
+            marujosCadastrados++;
+        }
+    }
+
+    printf("10) Navio em 30 s: todos os tiros e marujos saem; reinicio nao duplica\n");
+    for (int tentativa = 0; tentativa < 2; tentativa++) {
+        InicializarLista(&lista);
+        InicializarTiros(&tiros);
+        ReiniciarEventos(&seq);
+        ReiniciarCanhoes(canhoes.lista, canhoes.quantidade, canhoes.pedidos);
+        int tirosNavio = 0;
+        for (int q = 0; q < 60 * 30; q++) {
+            ExecutarEventos(&seq, DT, &lista, canhoes.pedidos, canhoes.quantidade);
+            tirosNavio += AtualizarCanhoes(canhoes.lista, canhoes.quantidade, canhoes.pedidos, &tiros, DT);
+        }
+        CONFERIR(tirosNavio == disparosCadastrados);
+        CONFERIR(lista.quantidade == marujosCadastrados);
+        LiberarInimigos(&lista);
+    }
     if (falhas == 0) printf("\nOK: todos os testes do canhao passaram.\n");
     else printf("\n%d verificacao(oes) falharam.\n", falhas);
     return falhas;
