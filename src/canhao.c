@@ -12,6 +12,7 @@ Canhao CriarCanhao(float x, float chaoY, int direcao)
     c.corpo = (Rectangle){ x, chaoY - CANHAO_ALTURA, CANHAO_LARGURA, CANHAO_ALTURA };
     c.direcao = (direcao >= 0) ? 1 : -1;
     c.estado = CANHAO_PARADO;
+    c.velocidadeTiro = 550.0f;
     return c;
 }
 
@@ -31,7 +32,7 @@ static bool AtualizarUmCanhao(Canhao *c, bool *pedido, SistemaTiros *tiros, floa
 
     case CANHAO_CARREGANDO:
         if (c->timer <= 0.0f) {
-            DispararTiroInimigo(tiros, c->corpo, c->direcao);
+            DispararTiroInimigoComVelocidade(tiros, c->corpo, c->direcao, c->velocidadeTiro);
             c->estado = CANHAO_INTERVALO;
             c->timer = CANHAO_TEMPO_INTERVALO;
             return true;

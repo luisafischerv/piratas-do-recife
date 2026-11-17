@@ -8,6 +8,9 @@
 #include "tiros.h"
 #include "eventos.h"
 #include "cipo.h"
+#include "cordas.h"
+#include "canhoes_escalada.h"
+#include "provisorio/troca_fase.h"
 #include <math.h>
 
 #define SAUDE_MAXIMA 3
@@ -160,6 +163,10 @@ int main(void)
     CarregarVisualTiros();
     SistemaCipos cipos;
     CarregarCipos(&cipos);
+    SistemaCordas cordas;
+    CarregarCordas(&cordas);
+    CanhoesEscalada canhoesEscalada;
+    ReiniciarCanhoesEscalada(&canhoesEscalada);
 
     Jogador nico;
     InicializarJogador(&nico);
@@ -179,13 +186,12 @@ int main(void)
     MontarEventosDaFase(&eventos, fase.id);
 
     int saudeNico = SAUDE_MAXIMA;
-    bool recuperouVidaNaFase = false;
     float tempoProtecao = 0.0f;
     bool pausado = false;
     double tempoTotal = 0.0;
     bool naTelaInicial = true;
     bool naIntroducao = false;
-
+    float tempoTransicao = 0.0f;
     while (!WindowShouldClose()) {
         if (naTelaInicial) {
             if (IsKeyPressed(KEY_ENTER)) {
@@ -214,27 +220,49 @@ int main(void)
 
         float tempoQuadro = GetFrameTime();
 
+        if (tempoTransicao > 0.0f) {
+        tempoTransicao -= tempoQuadro;
+
+        const char *nomeFase = "Ilha das Marés Perdidas";
+        int tamanhoFonte = 48;
+        int x = (GetScreenWidth() - MeasureText(nomeFase, tamanhoFonte)) / 2;
+        int y = (GetScreenHeight() - tamanhoFonte) / 2;
+
+        BeginDrawing();
+        ClearBackground((Color){ 16, 43, 58, 255 });
+        DrawText(nomeFase, x, y, tamanhoFonte, GOLD);
+        EndDrawing();
+        continue;
+        }
+
         if (IsKeyPressed(KEY_ESCAPE)) {
             pausado = !pausado;
         }
 
         if (!pausado) {
+            int destinoTeste = DestinoTesteFase(fase.id);
             tempoTotal += tempoQuadro;
 
             float dt = tempoQuadro;
             if (dt > 1.0f / 30.0f) dt = 1.0f / 30.0f;
 
             Rectangle anterior = nico.corpo;
-            if (fase.id != 2 || cipos.agarrado < 0) AtualizarJogador(&nico, dt);
+            if ((fase.id != 2 || cipos.agarrado < 0) && (fase.id != 3 || cordas.agarrada < 0)) AtualizarJogador(&nico, dt);
             if (fase.id == 2) {
                 float direcaoCipo = (float)IsKeyDown(KEY_D) - (float)IsKeyDown(KEY_A);
                 AtualizarCipos(&cipos, &nico, dt, direcaoCipo,
                                IsKeyDown(KEY_E), IsKeyPressed(KEY_SPACE));
             }
+            if (fase.id == 3) {
+                int vertical = (int)IsKeyDown(KEY_S) - (int)IsKeyDown(KEY_W);
+                int horizontal = (int)IsKeyDown(KEY_D) - (int)IsKeyDown(KEY_A);
+                AtualizarCordas(&cordas, &nico, dt, vertical, horizontal,
+                                IsKeyDown(KEY_E), IsKeyPressed(KEY_SPACE));
+            }
             if (nico.corpo.x < 0.0f) nico.corpo.x = 0.0f;
             if (nico.corpo.x + nico.corpo.width > fase.largura)
                 nico.corpo.x = fase.largura - nico.corpo.width;
-            if (cipos.agarrado < 0) ResolverColisoesCenario(&nico, &fase, anterior);
+            if (cipos.agarrado < 0 && (fase.id != 3 || cordas.agarrada < 0)) ResolverColisoesCenario(&nico, &fase, anterior);
             else {
                 // Um cipo nao permite atravessar obstaculos solidos.
                 for (int p = 0; p < fase.qtdPlataformas; p++) {
@@ -263,16 +291,21 @@ int main(void)
                                  fase.id >= 2 && cipos.agarrado < 0 && IsMouseButtonDown(MOUSE_BUTTON_RIGHT), dt))
                 IniciarAnimacaoTiro(&nico);
             AtualizarAtiradores(&tiros, &inimigos, &nico, dt);
-            int danoRecebido = AtualizarTiros(&tiros, &fase, &inimigos, &nico, dt);
+            int danoRecebido = 0;
+            if (fase.id == 3)
+                danoRecebido += AtualizarCanhoesEscalada(&canhoesEscalada, &tiros, &inimigos, &nico, dt);
+            danoRecebido += AtualizarTiros(&tiros, &fase, &inimigos, &nico, dt);
+            // So um disparo que realmente causa dano derruba Nico da corda.
+            if (fase.id == 3 && danoRecebido > 0 && tempoProtecao <= 0.0f && saudeNico > 0)
+                SoltarCordaPorDano(&cordas, &nico);
             // AtualizarInimigos remove cada inimigo derrotado uma unica vez.
             int quantidadeAntes = inimigos.quantidade;
             danoRecebido += AtualizarInimigos(&inimigos, &nico, dt);
             int derrotados = quantidadeAntes - inimigos.quantidade;
             AplicarDanoJogador(&saudeNico, &tempoProtecao, danoRecebido);
-            if (derrotados > 0 && !recuperouVidaNaFase && saudeNico > 0 &&
-                saudeNico < SAUDE_MAXIMA && nico.corpo.y <= fase.limiteQueda) {
-                saudeNico++;
-                recuperouVidaNaFase = true;
+            if (saudeNico > 0 && nico.corpo.y <= fase.limiteQueda) {
+                saudeNico += derrotados;
+                if (saudeNico > SAUDE_MAXIMA) saudeNico = SAUDE_MAXIMA;
             }
 
             if (saudeNico <= 0 || nico.corpo.y > fase.limiteQueda) {
@@ -281,30 +314,35 @@ int main(void)
                 nico.corpo.x = fase.pontoInicial.x;
                 nico.corpo.y = fase.pontoInicial.y;
                 saudeNico = SAUDE_MAXIMA;
-                recuperouVidaNaFase = false;
                 tempoProtecao = 0.0f;
                 InicializarEspada(&espada);
                 InicializarTiros(&tiros);
                 ReiniciarCipos(&cipos);
+                ReiniciarCordas(&cordas);
+                ReiniciarCanhoesEscalada(&canhoesEscalada);
 
                 LiberarInimigos(&inimigos);
                 InicializarLista(&inimigos);
                 CriarInimigosDaFase(&inimigos, fase.id);
                 ReiniciarEventos(&eventos);   // relogio local volta a 0, nada duplica
-            } else if (fase.id == 1 && CheckCollisionRecs(nico.corpo, fase.areaSaida)) {
+            } else if (destinoTeste != 0 ||
+                       ((fase.id == 1 || fase.id == 2) && CheckCollisionRecs(nico.corpo, fase.areaSaida))) {
                 Fase proxima = {0};
-                if (CarregarFase(&proxima, 2)) {
+                int destino = destinoTeste ? destinoTeste : fase.id + 1;
+                if (CarregarFase(&proxima, destino)) {
                     DescarregarFase(&fase);
                     fase = proxima;
+                    tempoTransicao = 1.5f;
                     nico = nicoInicial;
                     nico.corpo.x = fase.pontoInicial.x;
                     nico.corpo.y = fase.pontoInicial.y;
                     saudeNico = SAUDE_MAXIMA;
-                    recuperouVidaNaFase = false;
                     tempoProtecao = 0.0f;
                     InicializarEspada(&espada);
                     InicializarTiros(&tiros);
                     ReiniciarCipos(&cipos);
+                    ReiniciarCordas(&cordas);
+                    ReiniciarCanhoesEscalada(&canhoesEscalada);
                     LiberarInimigos(&inimigos);
                     InicializarLista(&inimigos);
                     CriarInimigosDaFase(&inimigos, fase.id);
@@ -321,10 +359,18 @@ int main(void)
         if (limiteCamera < 0.0f) limiteCamera = 0.0f;
         if (cameraX < 0.0f) cameraX = 0.0f;
         if (cameraX > limiteCamera) cameraX = limiteCamera;
-        camera.target = (Vector2){cameraX, 0.0f};
+        float cameraY = 0;
+        if (fase.id == 3) {
+            cameraY = nico.corpo.y + nico.corpo.height / 2 - GetScreenHeight() / 2.0f;
+            if (cameraY < 0) cameraY = 0;
+            if (cameraY > 1920 - GetScreenHeight()) cameraY = 1920 - GetScreenHeight();
+        }
+        camera.target = (Vector2){cameraX, cameraY};
         BeginMode2D(camera);
         DesenharFase(&fase);
         if (fase.id == 2) DesenharCipos(&cipos);
+        if (fase.id == 3) DesenharCordas(&cordas);
+        if (fase.id == 3) DesenharCanhoesEscalada(&canhoesEscalada);
         if (fase.id == 1)
             DrawText("MANGUE >", 2400, 500, 20, GOLD);
         DesenharInimigos(&inimigos);
@@ -332,9 +378,11 @@ int main(void)
         bool nicoVisivel = tempoProtecao <= 0.0f || (int)(tempoProtecao * 10.0f) % 2 == 0;
         if (nicoVisivel) {
             if (fase.id == 2 && cipos.agarrado >= 0) DesenharNicoNoCipo(&cipos, &nico);
+            else if (fase.id == 3 && cordas.agarrada >= 0) DesenharNicoNaCorda(&cordas, &nico);
             else DesenharJogador(&nico);
         }
         EndMode2D();
+        DrawText("TESTE: setas esquerda/direita trocam de fase", 760, 56, 16, GOLD);
         DrawText(fase.id == 1 ?
                  "A/D: mover  ESPACO: pular  MOUSE ESQ: espada  ESC: pausar" :
                  "A/D: mover  ESPACO: pular  MOUSE ESQ: espada  DIR: pistola  ESC: pausar",
@@ -349,6 +397,10 @@ int main(void)
             DrawText("CIPOS: segure E para agarrar; A/D dao embalo; ESPACO solta", 24, 130, 20, GOLD);
         if (fase.id == 2 && nico.corpo.x > 1450.0f && nico.corpo.x < 2960.0f)
             DrawText("Solte durante a subida para alcancar o proximo cipo!", 24, 158, 18, RAYWHITE);
+        if (fase.id == 3)
+            DrawText("E: agarrar  W/S: subir/descer  A/D + ESPACO: saltar", 24, 130, 20, GOLD);
+        if (fase.id == 3 && nico.corpo.y <= 200)
+            DrawText("CONVES ALCANCADO - proxima etapa: chefe final", 24, 158, 20, GOLD);
 
         for (int i = 0; i < SAUDE_MAXIMA; i++) {
             DesenharCoracao(24 + i * 40, 56, 4, i < saudeNico);
@@ -380,6 +432,7 @@ int main(void)
     DescarregarVisualInimigos();
     DescarregarVisualTiros();
     DescarregarCipos(&cipos);
+    DescarregarCordas(&cordas);
     DescarregarJogador(&nico);
     if (fundoInicial.id != 0) {
         UnloadTexture(fundoInicial);
