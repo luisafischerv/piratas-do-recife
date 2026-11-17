@@ -7,6 +7,7 @@
 #include "interface.h"
 #include "tiros.h"
 #include "eventos.h"
+#include "canhao.h"
 #include "cipo.h"
 #include <math.h>
 
@@ -177,6 +178,8 @@ int main(void)
     InicializarTiros(&tiros);
     SequenciaEventos eventos;   // eventos da fase, ordenados por Insertion Sort
     MontarEventosDaFase(&eventos, fase.id);
+    CanhoesDaFase canhoes;      // so o navio tem; nas outras fases quantidade = 0
+    MontarCanhoesDaFase(&canhoes, fase.id);
 
     int saudeNico = SAUDE_MAXIMA;
     bool recuperouVidaNaFase = false;
@@ -253,7 +256,7 @@ int main(void)
             if (AtualizarAtaqueEspada(&espada, cipos.agarrado < 0 && IsMouseButtonPressed(MOUSE_BUTTON_LEFT), dt))
                 IniciarAnimacaoAtaque(&nico);
             VerificarAcertosEspada(&espada, &nico, &inimigos);
-            ExecutarEventos(&eventos, dt, &inimigos, NULL, 0);
+            ExecutarEventos(&eventos, dt, &inimigos, canhoes.pedidos, canhoes.quantidade);
             AtivarInimigosProximos(&inimigos, &nico);
             if (tempoProtecao > 0.0f) {
                 tempoProtecao -= dt;
@@ -263,6 +266,7 @@ int main(void)
                                  fase.id >= 2 && cipos.agarrado < 0 && IsMouseButtonDown(MOUSE_BUTTON_RIGHT), dt))
                 IniciarAnimacaoTiro(&nico);
             AtualizarAtiradores(&tiros, &inimigos, &nico, dt);
+            AtualizarCanhoes(canhoes.lista, canhoes.quantidade, canhoes.pedidos, &tiros, dt);
             int danoRecebido = AtualizarTiros(&tiros, &fase, &inimigos, &nico, dt);
             // AtualizarInimigos remove cada inimigo derrotado uma unica vez.
             int quantidadeAntes = inimigos.quantidade;
@@ -291,6 +295,7 @@ int main(void)
                 InicializarLista(&inimigos);
                 CriarInimigosDaFase(&inimigos, fase.id);
                 ReiniciarEventos(&eventos);   // relogio local volta a 0, nada duplica
+                ReiniciarCanhoes(canhoes.lista, canhoes.quantidade, canhoes.pedidos);
             } else if (fase.id == 1 && CheckCollisionRecs(nico.corpo, fase.areaSaida)) {
                 Fase proxima = {0};
                 if (CarregarFase(&proxima, 2)) {
@@ -309,6 +314,8 @@ int main(void)
                     InicializarLista(&inimigos);
                     CriarInimigosDaFase(&inimigos, fase.id);
                     MontarEventosDaFase(&eventos, fase.id);
+                    // Ao criar a transicao ilha -> navio, repetir estas duas linhas.
+                    MontarCanhoesDaFase(&canhoes, fase.id);
                 }
             }
         }
@@ -327,6 +334,7 @@ int main(void)
         if (fase.id == 2) DesenharCipos(&cipos);
         if (fase.id == 1)
             DrawText("MANGUE >", 2400, 500, 20, GOLD);
+        DesenharCanhoes(canhoes.lista, canhoes.quantidade);
         DesenharInimigos(&inimigos);
         DesenharTiros(&tiros);
         bool nicoVisivel = tempoProtecao <= 0.0f || (int)(tempoProtecao * 10.0f) % 2 == 0;
