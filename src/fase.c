@@ -76,6 +76,7 @@ bool CarregarFase(Fase *f, int id){
         f->limiteQueda = CHAO_Y + 200.0f;
         // O trecho de cipos tem espaco para tres transferencias, sem atalhos pelo chao.
         f->largura = 3280.0f;
+        f->areaSaida = (Rectangle){3220, 0, 60, CHAO_Y};
         // Subir, soltar e descer: o teto impede atravessar tudo em um lancamento.
         AdicionarPlataforma(f, 0, CHAO_Y, 330, 100, PLAT_CHAO);
         AdicionarPlataforma(f, 580, 570, 90, 250, PLAT_RAIZ);
@@ -89,6 +90,18 @@ bool CarregarFase(Fase *f, int id){
         AdicionarPlataforma(f, 2960.0f, CHAO_Y, 320.0f, 100.0f, PLAT_CHAO);
         return true;
     }
+    if (id == 3) {
+        f->fundo = LoadTexture("assets/images/cenarios/fase3/escalada_navio_fundo_limpo.png");
+        if (!f->fundo.id) return false;
+        SetTextureFilter(f->fundo, TEXTURE_FILTER_BILINEAR);
+        f->passarela = LoadTexture("assets/images/cenarios/fase2/mangue_plataforma.png");
+        if (f->passarela.id) SetTextureFilter(f->passarela, TEXTURE_FILTER_BILINEAR);
+        f->largura = 1280;
+        f->pontoInicial = (Vector2){580, 1650};
+        f->limiteQueda = 1980;
+        AdicionarPlataforma(f, 530, 1800, 180, 20, PLAT_FIXA);
+        return true;
+    }
     return false;
 }
 
@@ -97,7 +110,16 @@ static void DesenharDetalhe(Texture2D textura, Rectangle origem, Rectangle desti
 }
 
 static void DesenharPlataformaFragil(const Fase *f, const Plataforma *p){
-    Color tom = p->estado == PLAT_AVISO ? (Color){255, 130, 90, 255} : (Color){ 170, 200, 150, 255 };
+    Plataforma visual = *p;
+    Color tom = (Color){170, 200, 150, 255};
+    if (p->estado == PLAT_AVISO) {
+        float progresso = fminf(1.0f, fmaxf(0.0f, 1.0f - p->tempoAviso / TEMPO_AVISO_FRAGIL));
+        visual.area.x += sinf((float)GetTime() * 60.0f) * 4.0f * progresso;
+        tom = (Color){(unsigned char)(170 + 70 * progresso),
+                      (unsigned char)(200 - 120 * progresso),
+                      (unsigned char)(150 - 100 * progresso), 255};
+    }
+    p = &visual; // Tremor visual sem deslocar o colisor.
 
     if (f->id == 2 && f->plataformaFragil.id) {
         // Recorta os postes: a superficie das tabuas coincide com o topo do colisor.
@@ -154,7 +176,7 @@ static void DesenharRaizes(Rectangle r)
 void DesenharFase(const Fase *f) {
     if (f->fundo.id) {
         Rectangle origem = {0, 0, (float)f->fundo.width, (float)f->fundo.height};
-        Rectangle destino = {0, 0, 1280.0f, (float)GetScreenHeight()};
+        Rectangle destino = {0, 0, 1280.0f, f->id == 3 ? 1920.0f : (float)GetScreenHeight()};
         // Escurece apenas o cenario para destacar personagens e obstaculos.
         DrawTexturePro(f->fundo, origem, destino, (Vector2){0, 0}, 0.0f,
                        (Color){165, 165, 175, 255});
@@ -193,7 +215,7 @@ void DesenharFase(const Fase *f) {
         Rectangle destino = p->area;
         if (p->tipo == PLAT_CHAO && f->chao.id) {
             textura = f->chao;
-            origem = f->id == 2 ? (Rectangle){20, 155, 2130, 510} :
+            origem = f->id >= 2 ? (Rectangle){20, 155, 2130, 510} :
                                   (Rectangle){0, 130, 2172, 510};
         } else if (p->tipo == PLAT_CAIXA && f->caixa.id) {
             textura = f->caixa;

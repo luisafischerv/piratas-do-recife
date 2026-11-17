@@ -63,8 +63,17 @@ void MontarEventosDaFase(SequenciaEventos *seq, int faseId)
 {
     InicializarSequencia(seq);
     if (faseId == 2) EventosDaIlha(seq);
-    if (faseId == 3) EventosDoNavio(seq);
+    // A fase 3 atual usa a sequencia vertical de canhoes_escalada.c.
 
+    OrdenarEventos(seq->eventos, seq->quantidade);
+    ReiniciarEventos(seq);
+}
+
+// Preparacao do conves horizontal, ainda nao conectada a escalada atual.
+void MontarEventosDoConves(SequenciaEventos *seq)
+{
+    InicializarSequencia(seq);
+    EventosDoNavio(seq);
     OrdenarEventos(seq->eventos, seq->quantidade);
     ReiniciarEventos(seq);
 }

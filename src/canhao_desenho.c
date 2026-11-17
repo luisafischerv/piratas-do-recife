@@ -20,8 +20,8 @@ void DesenharCanhoes(const Canhao canhoes[], int quantidade)
             if (aceso) DrawRectangleRec(r, Fade(ORANGE, 0.75f));
             // Linha na altura do tiro, mostrando o caminho da bala.
             float y = r.y + r.height * ALTURA_TIRO_RELATIVA + 4.0f;
-            float x0 = (c->direcao > 0) ? r.x + r.width : r.x - 400.0f;
-            DrawRectangle((int)x0, (int)y - 1, 400, 3, Fade(ORANGE, 0.5f));
+            float x0 = (c->direcao > 0) ? r.x + r.width : r.x - 700.0f;
+            DrawRectangle((int)x0, (int)y - 1, 700, 3, Fade(ORANGE, 0.5f));
             DrawText("!", (int)(r.x + r.width / 2 - 5), (int)(r.y - 34), 30, ORANGE);
         }
     }

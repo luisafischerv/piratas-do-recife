@@ -12,6 +12,7 @@
 /build/
 /bin/
 /obj/
+/config.mk
 
 /ranking.dat
 /ranking.txt

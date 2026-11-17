@@ -18,6 +18,7 @@ typedef struct Canhao {
     int direcao;         // 1 atira para a direita, -1 para a esquerda
     EstadoCanhao estado;
     float timer;         // quanto falta no estado atual
+    float velocidadeTiro;
 } Canhao;
 
 // Os canhoes de uma fase juntos com os pedidos de disparo, para o

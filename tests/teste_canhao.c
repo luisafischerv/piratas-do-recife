@@ -124,6 +124,8 @@ int main(void)
     MontarCanhoesDaFase(&canhoes, 3);
     CONFERIR(canhoes.quantidade == 3);
     MontarEventosDaFase(&seq, 3);
+    CONFERIR(seq.quantidade == 0); // Escalada nao recebe eventos do conves.
+    MontarEventosDoConves(&seq);
     int disparosCadastrados = 0, marujosCadastrados = 0;
     for (int i = 0; i < seq.quantidade; i++) {
         const Evento *e = &seq.eventos[i];
