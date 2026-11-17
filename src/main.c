@@ -133,29 +133,16 @@ static void DesenharTelaInicial(Texture2D fundoInicial) {
              yDica, 24, RAYWHITE);
 }
 
-static void DesenharIntroducao(Texture2D fundoInicial) {
-    int largura = GetScreenWidth();
-    int altura = GetScreenHeight();
-
-    if (fundoInicial.id != 0) {
-        Rectangle origem = {
-            0, 0, (float)fundoInicial.width, (float)fundoInicial.height
-        };
-        Rectangle destino = { 0, 0, (float)largura, (float)altura };
-
-        DrawTexturePro(fundoInicial, origem, destino,
-                       (Vector2){ 0, 0 }, 0.0f, WHITE);
+static void DesenharIntroducao(Texture2D imagem) {
+    if (imagem.id) {
+        Rectangle origem = {0, 0, (float)imagem.width, (float)imagem.height};
+        Rectangle destino = {0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()};
+        DrawTexturePro(imagem, origem, destino, (Vector2){0, 0}, 0, WHITE);
+    } else {
+        DrawText("A Mare Negra cobriu o Recife.", 80, 260, 30, RAYWHITE);
+        DrawText("Nico parte para enfrentar o capitao Avelino.", 80, 310, 30, RAYWHITE);
+        DrawText("Pressione ENTER para continuar", 80, 390, 24, RAYWHITE);
     }
-
-    DrawRectangle(0, altura - 210, largura, 210, Fade(BLACK, 0.82f));
-
-    DrawText("O Capitão Avelino retirou um sino das ruínas do mangue e despertou a Maré Negra.",
-             48, altura - 180, 24, RAYWHITE);
-    DrawText("Uma névoa avançou sobre o Recife com a tripulação amaldiçoada.",
-             48, altura - 145, 24, RAYWHITE);
-    DrawText("Nico Maré precisa chegar ao navio e enfrentar Avelino para salvar a cidade.",
-             48, altura - 110, 24, RAYWHITE);
-    DrawText("Pressione Enter para continuar", 48, altura - 55, 22, GOLD);
 }
 
 int main(void)
@@ -164,7 +151,13 @@ int main(void)
     SetTargetFPS(60);
     SetExitKey(KEY_NULL);
     Texture2D fundoInicial = LoadTexture("assets/images/capa_nova_proposta.png");
-    Texture2D fundoIntroducao = LoadTexture("assets/images/tela_inicial.png");
+    Texture2D fundoIntroducao = LoadTexture("assets/images/transicoes/historia_leitura_proposta.png");
+    Texture2D transicoes[4] = {
+        LoadTexture("assets/images/transicoes/cais.png"),
+        LoadTexture("assets/images/transicoes/ilha.png"),
+        LoadTexture("assets/images/transicoes/escalada.png"),
+        LoadTexture("assets/images/transicoes/avelino.png")
+    };
     Avelino avelino;
     CarregarAvelino(&avelino);
     BandoCaranguejos bando;
@@ -202,7 +195,7 @@ int main(void)
     double tempoTotal = 0.0;
     bool naTelaInicial = true;
     bool naIntroducao = false;
-    float tempoTransicao = 0.0f;
+    bool naTransicao = true;
     while (!WindowShouldClose()) {
         if (naTelaInicial) {
             if (IsKeyPressed(KEY_ENTER)) {
@@ -231,21 +224,20 @@ int main(void)
 
         float tempoQuadro = GetFrameTime();
 
-        if (tempoTransicao > 0.0f) {
-        tempoTransicao -= tempoQuadro;
-
-        const char *nomeFase = fase.id == 1 ? "Cais do Recife" :
-                               fase.id == 2 ? "Ilha das Mares Perdidas" :
-                               fase.id == 3 ? "Escalada ao Navio" : "Arena do Capitao Avelino";
-        int tamanhoFonte = 48;
-        int x = (GetScreenWidth() - MeasureText(nomeFase, tamanhoFonte)) / 2;
-        int y = (GetScreenHeight() - tamanhoFonte) / 2;
-
-        BeginDrawing();
-        ClearBackground((Color){ 16, 43, 58, 255 });
-        DrawText(nomeFase, x, y, tamanhoFonte, GOLD);
-        EndDrawing();
-        continue;
+        if (naTransicao) {
+            Texture2D tela = transicoes[fase.id - 1];
+            if (IsKeyPressed(KEY_ENTER)) naTransicao = false;
+            BeginDrawing();
+            ClearBackground((Color){16, 43, 58, 255});
+            if (tela.id) {
+                Rectangle origem = {0, 0, (float)tela.width, (float)tela.height};
+                Rectangle destino = {0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()};
+                DrawTexturePro(tela, origem, destino, (Vector2){0, 0}, 0, WHITE);
+            } else {
+                DrawText("Pressione ENTER para iniciar", 380, 350, 30, RAYWHITE);
+            }
+            EndDrawing();
+            continue;
         }
 
         if (IsKeyPressed(KEY_ESCAPE)) {
@@ -347,14 +339,14 @@ int main(void)
                 InicializarLista(&inimigos);
                 CriarInimigosDaFase(&inimigos, fase.id);
             } else if (destinoTeste != 0 ||
-                       ((fase.id == 1 || fase.id == 2) && CheckCollisionRecs(nico.corpo, fase.areaSaida)) ||
+                       ((fase.id == 1 || fase.id == 2) && inimigos.quantidade == 0 && CheckCollisionRecs(nico.corpo, fase.areaSaida)) ||
                        (fase.id == 3 && nico.corpo.y <= 200)) {
                 Fase proxima = {0};
                 int destino = destinoTeste ? destinoTeste : fase.id + 1;
                 if (CarregarFase(&proxima, destino)) {
                     DescarregarFase(&fase);
                     fase = proxima;
-                    tempoTransicao = 1.5f;
+                    naTransicao = true;
                     nico = nicoInicial;
                     nico.corpo.x = fase.pontoInicial.x;
                     nico.corpo.y = fase.pontoInicial.y;
@@ -396,8 +388,6 @@ int main(void)
         if (fase.id == 2) DesenharCipos(&cipos);
         if (fase.id == 3) DesenharCordas(&cordas);
         if (fase.id == 3) DesenharCanhoesEscalada(&canhoesEscalada);
-        if (fase.id == 1)
-            DrawText("MANGUE >", 2400, 500, 20, GOLD);
         DesenharInimigos(&inimigos);
         DesenharTiros(&tiros);
         bool nicoVisivel = tempoProtecao <= 0.0f || (int)(tempoProtecao * 10.0f) % 2 == 0;
@@ -407,23 +397,16 @@ int main(void)
             else DesenharJogador(&nico);
         }
         EndMode2D();
-        DrawText("TESTE: setas esquerda/direita trocam de fase", 760, 56, 16, GOLD);
-        DrawText(fase.id == 1 ?
-                 "A/D: mover  ESPACO: pular  MOUSE ESQ: espada  ESC: pausar" :
-                 "A/D: mover  ESPACO: pular  MOUSE ESQ: espada  DIR: pistola  ESC: pausar",
-                 24, 24, 20, RAYWHITE);
-        if (fase.id == 2 && nico.corpo.x < 500.0f)
-            DrawText("SUBA: pule segurando E; D da embalo; ESPACO solta o cipo", 24, 130, 20, GOLD);
-        if (fase.id == 2 && nico.corpo.x >= 500 && nico.corpo.x < 1010)
-            DrawText("SALTE do cipo ate a plataforma abaixo das raizes!", 24, 130, 20, GOLD);
-        if (fase.id == 2 && nico.corpo.x >= 1010 && nico.corpo.x <= 1450)
-            DrawText("REVIDE: botao direito atira. Use os apoios firmes entre os saltos.", 24, 130, 20, GOLD);
-        if (fase.id == 2 && nico.corpo.x > 1450.0f)
-            DrawText("CIPOS: segure E para agarrar; A/D dao embalo; ESPACO solta", 24, 130, 20, GOLD);
-        if (fase.id == 2 && nico.corpo.x > 1450.0f && nico.corpo.x < 2960.0f)
-            DrawText("Solte durante a subida para alcancar o proximo cipo!", 24, 158, 18, RAYWHITE);
-        if (fase.id == 3)
-            DrawText("E: agarrar  W/S: subir/descer  A/D + ESPACO: saltar", 24, 130, 20, GOLD);
+        if (fase.id == 1 || fase.id == 2) {
+            DrawText(TextFormat("Inimigos restantes: %d", inimigos.quantidade),
+                     24, 24, 20, RAYWHITE);
+            if (inimigos.quantidade > 0 && CheckCollisionRecs(nico.corpo, fase.areaSaida)) {
+                const char *mensagem = "Derrote todos os inimigos para avancar";
+                int largura = MeasureText(mensagem, 22);
+                DrawRectangle((GetScreenWidth() - largura) / 2 - 16, 125, largura + 32, 38, Fade(BLACK, 0.8f));
+                DrawText(mensagem, (GetScreenWidth() - largura) / 2, 133, 22, RAYWHITE);
+            }
+        }
 
         for (int i = 0; i < SAUDE_MAXIMA; i++) {
             DesenharCoracao(24 + i * 40, 56, 4, i < saudeNico);
@@ -461,6 +444,7 @@ int main(void)
     DescarregarCipos(&cipos);
     DescarregarCordas(&cordas);
     DescarregarJogador(&nico);
+    for (int i = 0; i < 4; i++) if (transicoes[i].id) UnloadTexture(transicoes[i]);
     if (fundoIntroducao.id) UnloadTexture(fundoIntroducao);
     if (fundoInicial.id != 0) {
         UnloadTexture(fundoInicial);
