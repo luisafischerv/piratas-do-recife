@@ -191,7 +191,7 @@ int main(void)
     double tempoTotal = 0.0;
     bool naTelaInicial = true;
     bool naIntroducao = false;
-
+    float tempoTransicao = 0.0f;
     while (!WindowShouldClose()) {
         if (naTelaInicial) {
             if (IsKeyPressed(KEY_ENTER)) {
@@ -219,6 +219,21 @@ int main(void)
         }
 
         float tempoQuadro = GetFrameTime();
+
+        if (tempoTransicao > 0.0f) {
+        tempoTransicao -= tempoQuadro;
+
+        const char *nomeFase = "Ilha das Marés Perdidas";
+        int tamanhoFonte = 48;
+        int x = (GetScreenWidth() - MeasureText(nomeFase, tamanhoFonte)) / 2;
+        int y = (GetScreenHeight() - tamanhoFonte) / 2;
+
+        BeginDrawing();
+        ClearBackground((Color){ 16, 43, 58, 255 });
+        DrawText(nomeFase, x, y, tamanhoFonte, GOLD);
+        EndDrawing();
+        continue;
+        }
 
         if (IsKeyPressed(KEY_ESCAPE)) {
             pausado = !pausado;
@@ -317,6 +332,7 @@ int main(void)
                 if (CarregarFase(&proxima, destino)) {
                     DescarregarFase(&fase);
                     fase = proxima;
+                    tempoTransicao = 1.5f;
                     nico = nicoInicial;
                     nico.corpo.x = fase.pontoInicial.x;
                     nico.corpo.y = fase.pontoInicial.y;
