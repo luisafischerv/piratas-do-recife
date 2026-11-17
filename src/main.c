@@ -13,6 +13,7 @@
 #include "bando_caranguejos.h"
 #include "provisorio/troca_fase.h"
 #include <math.h>
+#include "ranking.h"
 
 #define SAUDE_MAXIMA 3
 #define DURACAO_PROTECAO 1.0f
@@ -172,6 +173,23 @@ static void DesenharFinalIlustrado(Texture2D imagem, double tempoTotal){
              48, altura - 55, 24, RAYWHITE);
 }
 
+static void AtualizarApelido(char apelido[TAM_APELIDO], int *tamanho){
+    if (IsKeyPressed(KEY_BACKSPACE) && *tamanho > 0) {
+        (*tamanho)--;
+        apelido[*tamanho] = '\0';
+    }
+
+    int caractere;
+    while ((caractere = GetCharPressed()) != 0) {
+        if (caractere >= 32 && caractere <= 126 && caractere != ';' &&
+            *tamanho < TAM_APELIDO - 1) {
+            apelido[*tamanho] = (char)caractere;
+            (*tamanho)++;
+            apelido[*tamanho] = '\0';
+        }
+    }
+}
+
 int main(void)
 {
     InitWindow(1280, 720, "Piratas do Recife: A Maldicao da Mare Negra");
@@ -221,6 +239,8 @@ int main(void)
     bool pausado = false;
     double tempoTotal = 0.0;
     bool campanhaConcluida = false;
+    char apelido[TAM_APELIDO] = "";
+    int tamanhoApelido = 0;
     bool naTelaInicial = true;
     bool naIntroducao = false;
     bool naTransicao = true;
@@ -229,11 +249,14 @@ int main(void)
         if (campanhaConcluida) {
         int segundos = (int)tempoTotal;
 
+        AtualizarApelido(apelido, &tamanhoApelido);
         BeginDrawing();
         ClearBackground((Color){ 16, 43, 58, 255 });
         DrawText("VITORIA!", 48, 48, 48, GOLD);
-        DrawText(TextFormat("Tempo final: %02d:%02d", segundos / 60, segundos % 60),
-                48, 115, 28, RAYWHITE);
+        DrawText(TextFormat("Tempo final: %02d:%02d", segundos / 60, segundos % 60), 48, 115, 28, RAYWHITE);
+        DrawText("Digite seu apelido (ate 12 caracteres)", 48, 175, 24, RAYWHITE);
+        DrawRectangleLines(48, 213, 360, 50, GOLD);
+        DrawText(apelido, 60, 225, 26, RAYWHITE);
         EndDrawing();
         continue;
         }
