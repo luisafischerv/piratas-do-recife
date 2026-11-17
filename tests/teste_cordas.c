@@ -20,6 +20,19 @@ int main(void)
         AtualizarCordas(&s, &j, 1.0f / 60.0f, 0, 1, true, false);
     }
     assert(s.agarrada == 2);
+    SoltarCordaPorDano(&s, &j);
+    assert(s.agarrada == -1 && j.velocidadeY > 0 && !j.estaNoChao);
+    // Segurar E nao cancela a queda imediatamente.
+    for (int k = 0; k < 20; k++) {
+        AtualizarCordas(&s, &j, 0.016f, 0, 0, true, false);
+        assert(s.agarrada == -1);
+    }
+    float bloqueioAntes = s.bloqueio;
+    SoltarCordaPorDano(&s, &j);
+    assert(s.bloqueio == bloqueioAntes);
+    for (int k = 0; k < 20; k++)
+        AtualizarCordas(&s, &j, 0.016f, 0, 0, true, false);
+    assert(s.agarrada == 2);
     ReiniciarCordas(&s);
     assert(s.agarrada == -1 && s.bloqueio == 0);
     puts("Escalada e troca de cordas passaram.");

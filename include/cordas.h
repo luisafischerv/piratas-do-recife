@@ -12,6 +12,7 @@ typedef struct SistemaCordas {
 } SistemaCordas;
 void CarregarCordas(SistemaCordas *s);
 void ReiniciarCordas(SistemaCordas *s);
+void SoltarCordaPorDano(SistemaCordas *s, Jogador *j);
 void DescarregarCordas(SistemaCordas *s);
 void AtualizarCordas(SistemaCordas *s, Jogador *j, float dt, int vertical, int horizontal, bool agarrar, bool saltar);
 void DesenharCordas(const SistemaCordas *s);

@@ -7,6 +7,17 @@ static const float posicoes[] = {460, 640, 820};
 #define VELOCIDADE_ESCALADA 170.0f
 
 void ReiniciarCordas(SistemaCordas *s) { s->agarrada = -1; s->bloqueio = 0; s->tempoAnimacao = 0; }
+void SoltarCordaPorDano(SistemaCordas *s, Jogador *j)
+{
+    if (s->agarrada < 0) return;
+    s->agarrada = -1;
+    s->bloqueio = 0.5f;
+    j->velocidadeY = 120.0f;
+    j->estaNoChao = false;
+    j->preparoSalto = 0;
+    j->tempoNoAr = 0;
+    j->saltoDiagonal = false;
+}
 void CarregarCordas(SistemaCordas *s)
 {
     *s = (SistemaCordas){0};

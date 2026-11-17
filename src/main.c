@@ -280,6 +280,9 @@ int main(void)
             if (fase.id == 3)
                 danoRecebido += AtualizarCanhoesEscalada(&canhoesEscalada, &tiros, &inimigos, &nico, dt);
             danoRecebido += AtualizarTiros(&tiros, &fase, &inimigos, &nico, dt);
+            // So um disparo que realmente causa dano derruba Nico da corda.
+            if (fase.id == 3 && danoRecebido > 0 && tempoProtecao <= 0.0f && saudeNico > 0)
+                SoltarCordaPorDano(&cordas, &nico);
             // AtualizarInimigos remove cada inimigo derrotado uma unica vez.
             int quantidadeAntes = inimigos.quantidade;
             danoRecebido += AtualizarInimigos(&inimigos, &nico, dt);
