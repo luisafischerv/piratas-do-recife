@@ -8,16 +8,16 @@ static void PrepararTrecho(CanhoesEscalada *s, int trecho)
     InicializarSequencia(&s->eventos);
     // Ritmos alternados entre rodadas e alturas, com pausas de duracao variavel.
     static const float tempos[2][6] = {
-        {0.7f, 1.9f, 3.5f, 5.0f, 6.1f, 8.0f},
-        {0.4f, 2.0f, 2.9f, 4.8f, 6.6f, 8.1f}
+        {0.55f, 1.65f, 2.55f, 3.85f, 4.80f, 6.05f},
+        {0.40f, 1.30f, 2.65f, 3.60f, 4.85f, 5.85f}
     };
     static const int ordem[2][6] = {{0, 1, 2, 0, 1, 2}, {2, 1, 0, 2, 1, 0}};
     int ritmo = (s->rodada + trecho) % 2;
     for (int i = 0; i < 6; i++)
         CadastrarDisparoCanhao(&s->eventos, tempos[ritmo][i], trecho * 3 + ordem[ritmo][i]);
-    CadastrarDisparoCanhao(&s->eventos, 0.2f, CANHOES_ESCALADA_LATERAIS + (trecho + ritmo + 1) % 3);
-    CadastrarDisparoCanhao(&s->eventos, 3.4f, CANHOES_ESCALADA_LATERAIS + (trecho + ritmo) % 3);
-    CadastrarDisparoCanhao(&s->eventos, 6.9f, CANHOES_ESCALADA_LATERAIS + (trecho + ritmo + 2) % 3);
+    CadastrarDisparoCanhao(&s->eventos, 0.2f, CANHOES_ESCALADA_LATERAIS + (trecho + s->rodada + 1) % 3);
+    CadastrarDisparoCanhao(&s->eventos, 2.35f, CANHOES_ESCALADA_LATERAIS + (trecho + s->rodada) % 3);
+    CadastrarDisparoCanhao(&s->eventos, 4.65f, CANHOES_ESCALADA_LATERAIS + (trecho + s->rodada + 2) % 3);
     OrdenarEventos(s->eventos.eventos, s->eventos.quantidade);
 }
 
@@ -78,7 +78,7 @@ int AtualizarCanhoesEscalada(CanhoesEscalada *s, SistemaTiros *tiros, ListaInimi
             if (s->yBala[i] < 0) s->balaAtiva[i] = false;
         }
     }
-    if (s->eventos.relogio >= 10.5f) {
+    if (s->eventos.relogio >= 7.6f) {
         s->rodada++;
         PrepararTrecho(s, trecho);
     }
