@@ -76,11 +76,6 @@ static void DesenharMarujo(const Inimigo *m)
     } else {
         DrawRectangleRec(m->corpo, MAROON);
     }
-    if (m->estado == ESTADO_PREPARACAO) {
-        DrawRectangleLinesEx(AreaGolpeMarujo(m), 2.0f, ORANGE);
-    } else if (m->estado == ESTADO_ATAQUE) {
-        DrawRectangleRec(AreaGolpeMarujo(m), Fade(RED, 0.7f));
-    }
 
     const int pixel = 2;
     const int larguraCoracao = 8 * pixel;
@@ -201,12 +196,6 @@ void DesenharInimigos(const ListaInimigos *lista)
                                at->tempoDano > 0.0f ? RED : WHITE);
             } else {
                 DrawRectangleRec(no->dados.corpo, no->dados.tempoDano > 0 ? WHITE : DARKPURPLE);
-            }
-            if (no->dados.estado == ESTADO_PREPARACAO) {
-                DrawText("!", (int)no->dados.corpo.x + 14, (int)no->dados.corpo.y - 32, 28, ORANGE);
-                float y = no->dados.corpo.y + no->dados.corpo.height * ALTURA_TIRO_RELATIVA + 4.0f;
-                float x = no->dados.direcao > 0 ? no->dados.corpo.x + no->dados.corpo.width : no->dados.corpo.x;
-                DrawLineEx((Vector2){x, y}, (Vector2){x + no->dados.direcao * 100.0f, y}, 2.0f, ORANGE);
             }
             break;
         case INIMIGO_CARANGUEJO:
