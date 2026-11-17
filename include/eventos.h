@@ -35,4 +35,13 @@ int ExecutarEventos(SequenciaEventos *seq, float dt, ListaInimigos *lista,
                     bool disparoCanhao[], int maxCanhoes);
 void ReiniciarEventos(SequenciaEventos *seq);
 
+// Atalhos para cadastrar (eventos_fases.c).
+bool CadastrarSurgimentoMarujo(SequenciaEventos *seq, float instante, float x, float chaoY,
+                               float limiteEsquerdo, float limiteDireito);
+bool CadastrarDisparoCanhao(SequenciaEventos *seq, float instante, int indiceCanhao);
+
+// Monta os eventos de uma fase: cadastra, ordena (Insertion Sort) e zera o relogio.
+// Chamar UMA vez ao carregar a fase. Fase sem eventos fica com a sequencia vazia.
+void MontarEventosDaFase(SequenciaEventos *seq, int faseId);
+
 #endif

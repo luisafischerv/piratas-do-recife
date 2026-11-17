@@ -8,13 +8,13 @@
 #define RECARGA_ATIRADOR 1.5f
 #define VELOCIDADE_ATIRADOR 60.0f
 
-static bool Disparar(SistemaTiros *s, Rectangle corpo, int direcao, bool jogador)
+static bool Disparar(SistemaTiros *s, Rectangle corpo, int direcao, bool jogador, float velocidade)
 {
     for (int i = 0; i < MAX_TIROS; i++) {
         if (s->tiros[i].ativo) continue;
         float x = direcao > 0 ? corpo.x + corpo.width : corpo.x - 12.0f;
         s->tiros[i] = (Tiro){ {x, corpo.y + corpo.height * ALTURA_TIRO_RELATIVA, 12.0f, 8.0f},
-                              direcao * VELOCIDADE_TIRO, true, jogador };
+                              direcao * velocidade, true, jogador };
         return true;
     }
     return false;
@@ -22,10 +22,20 @@ static bool Disparar(SistemaTiros *s, Rectangle corpo, int direcao, bool jogador
 
 void InicializarTiros(SistemaTiros *s) { *s = (SistemaTiros){0}; }
 
+bool DispararTiroInimigo(SistemaTiros *s, Rectangle origem, int direcao)
+{
+    return Disparar(s, origem, direcao, false, VELOCIDADE_TIRO);
+}
+
+bool DispararTiroInimigoComVelocidade(SistemaTiros *s, Rectangle origem, int direcao, float velocidade)
+{
+    return Disparar(s, origem, direcao, false, velocidade > 0 ? velocidade : VELOCIDADE_TIRO);
+}
+
 bool AtualizarPistola(SistemaTiros *s, const Jogador *j, bool pressionado, float dt)
 {
     if (s->recarga > 0.0f) s->recarga -= dt;
-    if (pressionado && s->recarga <= 0.0f && Disparar(s, j->corpo, j->direcao, true)) {
+    if (pressionado && s->recarga <= 0.0f && Disparar(s, j->corpo, j->direcao, true, VELOCIDADE_TIRO)) {
         s->recarga = INTERVALO_PISTOLA;
         return true;
     }
@@ -56,7 +66,7 @@ void AtualizarAtiradores(SistemaTiros *s, ListaInimigos *lista, const Jogador *j
         if (i->estado == ESTADO_PREPARACAO) {
             // A direcao fica fixa durante o aviso para permitir a esquiva.
             if (i->timerEstado <= 0.0f) {
-                Disparar(s, i->corpo, i->direcao, false);
+                Disparar(s, i->corpo, i->direcao, false, VELOCIDADE_TIRO);
                 i->golpeJaAcertou = true; // indica que a recuperacao segue um disparo
                 i->estado = ESTADO_RECUPERACAO;
                 i->timerEstado = RECARGA_ATIRADOR;
@@ -90,6 +100,15 @@ static float DistanciaContato(Rectangle tiro, Rectangle alvo, float deslocamento
     return distancia >= 0.0f && distancia <= fabsf(deslocamento) ? distancia : -1.0f;
 }
 
+// O corpo usado na movimentacao e menor que a arte. Para tiros, inclui a cabeca
+// e o tronco desenhados acima dele, sem tornar armas e acessorios vulneraveis.
+static Rectangle AreaDanoPorTiro(Rectangle corpo, float extensaoSuperior)
+{
+    corpo.y -= extensaoSuperior;
+    corpo.height += extensaoSuperior;
+    return corpo;
+}
+
 int AtualizarTiros(SistemaTiros *s, const Fase *fase, ListaInimigos *lista, const Jogador *j, float dt)
 {
     int dano = 0;
@@ -108,11 +127,13 @@ int AtualizarTiros(SistemaTiros *s, const Fase *fase, ListaInimigos *lista, cons
         if (t->doJogador) {
             for (NoInimigo *no = lista->inicio; no; no = no->proximo) {
                 if (no->dados.saude <= 0) continue;
-                float d = DistanciaContato(t->area, no->dados.corpo, deslocamento);
+                Rectangle alvo = AreaDanoPorTiro(no->dados.corpo, 30.0f);
+                float d = DistanciaContato(t->area, alvo, deslocamento);
                 if (d >= 0.0f && d < menor) { menor = d; atingido = &no->dados; }
             }
         } else {
-            float d = DistanciaContato(t->area, j->corpo, deslocamento);
+            Rectangle alvo = AreaDanoPorTiro(j->corpo, 30.0f);
+            float d = DistanciaContato(t->area, alvo, deslocamento);
             if (d >= 0.0f && d < menor) { menor = d; atingiuJogador = true; }
         }
         if (menor <= fabsf(deslocamento)) {

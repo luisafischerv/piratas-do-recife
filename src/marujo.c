@@ -29,6 +29,46 @@ Inimigo CriarMarujo(float x, float chaoY, float limiteEsquerdo, float limiteDire
     return m;
 }
 
+#define CONVOCACAO_MARGEM   10.0f   // distancia da borda da arena
+#define CONVOCACAO_ESPACO   70.0f   // distancia entre dois convocados
+
+int ContarMarujos(const ListaInimigos *lista)
+{
+    int total = 0;
+    for (const NoInimigo *no = lista->inicio; no != NULL; no = no->proximo) {
+        if (no->dados.tipo == INIMIGO_MARUJO && no->dados.saude > 0) total++;
+    }
+    return total;
+}
+
+int ConvocarMarujos(ListaInimigos *lista, int quantidade, int limite,
+                    float chaoY, float limiteEsquerdo, float limiteDireito,
+                    float xJogador)
+{
+    int vagas = limite - ContarMarujos(lista);
+    if (quantidade > vagas) quantidade = vagas;
+    if (quantidade <= 0) return 0;
+
+    // Surge do lado oposto ao Nico, para dar tempo de reagir.
+    float meio = (limiteEsquerdo + limiteDireito) / 2.0f;
+    bool pelaDireita = xJogador < meio;
+
+    int inseridos = 0;
+    for (int i = 0; i < quantidade; i++) {
+        float x = pelaDireita
+            ? limiteDireito - MARUJO_LARGURA - CONVOCACAO_MARGEM - i * CONVOCACAO_ESPACO
+            : limiteEsquerdo + CONVOCACAO_MARGEM + i * CONVOCACAO_ESPACO;
+        if (x < limiteEsquerdo) x = limiteEsquerdo;
+        if (x + MARUJO_LARGURA > limiteDireito) x = limiteDireito - MARUJO_LARGURA;
+
+        Inimigo m = CriarMarujo(x, chaoY, limiteEsquerdo, limiteDireito);
+        m.direcao = pelaDireita ? -1 : 1;           // virado para o Nico
+        if (InserirInimigo(lista, m) == NULL) break; // sem memoria: para sem quebrar
+        inseridos++;
+    }
+    return inseridos;
+}
+
 Rectangle AreaGolpeMarujo(const Inimigo *m)
 {
     float altura = m->corpo.height * 0.6f;

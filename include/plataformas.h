@@ -10,7 +10,8 @@ typedef enum TipoPlataforma {
     PLAT_CAIXA,
     PLAT_FRAGIL,
     PLAT_BARRIL,
-    PLAT_SACO
+    PLAT_SACO,
+    PLAT_RAIZ
 } TipoPlataforma;
 
 typedef enum EstadoPlataforma {

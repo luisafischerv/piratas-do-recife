@@ -1,6 +1,8 @@
 #include <math.h>
 #include "fase.h"
 
+#define TEMPO_AVISO_FRAGIL 0.6f
+
 static bool NicoPisando(const Jogador *j, Rectangle p){
     float pesY = j->corpo.y + j->corpo.height;
     bool alinhadoX = j->corpo.x + j->corpo.width > p.x && j->corpo.x < p.x + p.width;
@@ -28,7 +30,7 @@ void AtualizarPlataformasFrageis(Fase *f, const Jogador *j, float dt){
 }
 
 void RestaurarPlataformas(Fase *f){
-    for (int i = 0; i < f->qtdPlataformas; i++){
+    for (int i = 0; i < f->qtdPlataformas; i++) {
         Plataforma *p = &f->plataformas[i];
         p->estado = PLAT_NORMAL;
         p->tempoAviso = 0.0f;
