@@ -102,6 +102,17 @@ bool CarregarFase(Fase *f, int id){
         AdicionarPlataforma(f, 530, 1800, 180, 20, PLAT_FIXA);
         return true;
     }
+    if (id == 4) {
+        f->fundo = LoadTexture("assets/images/cenarios/fase3/arena_chefe_proposta.png");
+        if (!f->fundo.id) return false;
+        SetTextureFilter(f->fundo, TEXTURE_FILTER_BILINEAR);
+        f->largura = 1280;
+        f->pontoInicial = (Vector2){140, 520};
+        f->limiteQueda = 920;
+        // O piso ja faz parte da imagem; este retangulo serve apenas para colisao.
+        AdicionarPlataforma(f, 0, 600, 1280, 120, PLAT_CHAO);
+        return true;
+    }
     return false;
 }
 
@@ -194,6 +205,7 @@ void DesenharFase(const Fase *f) {
     for (int i = 0; i < f->qtdPlataformas; i++) {
         const Plataforma *p = &f->plataformas[i];
         if (!p->ativa) continue;
+        if (f->id == 4 && p->tipo == PLAT_CHAO) continue;
         if (p->tipo == PLAT_RAIZ) {
             if (f->raizes.id) {
                 // Preserva pontas e folhas da arte, que ultrapassam o colisor como decoracao.

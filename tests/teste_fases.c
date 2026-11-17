@@ -22,6 +22,11 @@ int main(void)
            fase.pontoInicial.x < fase.plataformas[0].area.x + fase.plataformas[0].area.width);
     assert(fase.pontoInicial.y < fase.plataformas[0].area.y);
     DescarregarFase(&fase);
+    assert(CarregarFase(&fase, 4));
+    assert(fase.fundo.id && fase.largura == 1280 && fase.qtdPlataformas == 1);
+    assert(fase.plataformas[0].area.y == fase.pontoInicial.y + 80);
+    assert(fase.plataformas[0].area.width == fase.largura);
+    DescarregarFase(&fase);
     CloseWindow();
     puts("Carregamento das fases passou.");
     return 0;

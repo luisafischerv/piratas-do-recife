@@ -10,7 +10,7 @@ static inline int DestinoTesteFase(int faseAtual)
     bool proxima = IsKeyPressed(KEY_RIGHT);
     if (anterior == proxima) return 0;
     if (anterior && faseAtual > 1) return faseAtual - 1;
-    if (proxima && faseAtual < 3) return faseAtual + 1;
+    if (proxima && faseAtual < 4) return faseAtual + 1;
     return 0;
 }
 #endif

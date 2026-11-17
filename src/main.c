@@ -4,13 +4,14 @@
 #include "combate.h"
 #include "inimigos_ia.h"
 #include "marujo.h"
-#include "caranguejo.h"
 #include "interface.h"
 #include "tiros.h"
 #include "eventos.h"
 #include "cipo.h"
 #include "cordas.h"
 #include "canhoes_escalada.h"
+#include "avelino.h"
+#include "bando_caranguejos.h"
 #include "provisorio/troca_fase.h"
 #include <math.h>
 
@@ -74,11 +75,13 @@ static void CriarInimigosDaFase(ListaInimigos *inimigos, int faseId)
         atirador.limiteDireito = 1544.0f;
         atirador.aguardaProximidade = true;
         InserirInimigo(inimigos, atirador);
-        Inimigo caranguejo = CriarCaranguejo(3000.0f, 620.0f, 2970.0f, 3270.0f);
-        caranguejo.aguardaProximidade = true;
-        InserirInimigo(inimigos, caranguejo);
         atirador = CriarAtirador(3100.0f, 620.0f);
         atirador.limiteEsquerdo = 2960.0f;
+        atirador.limiteDireito = 3280.0f;
+        atirador.aguardaProximidade = true;
+        InserirInimigo(inimigos, atirador);
+        atirador = CriarAtirador(3200.0f, 620.0f);
+        atirador.limiteEsquerdo = 3120.0f;
         atirador.limiteDireito = 3280.0f;
         atirador.aguardaProximidade = true;
         InserirInimigo(inimigos, atirador);
@@ -161,6 +164,10 @@ int main(void)
     SetTargetFPS(60);
     SetExitKey(KEY_NULL);
     Texture2D fundoInicial = LoadTexture("assets/images/tela_inicial.png");
+    Avelino avelino;
+    CarregarAvelino(&avelino);
+    BandoCaranguejos bando;
+    ReiniciarBando(&bando);
     CarregarVisualInimigos();
     CarregarVisualTiros();
     SistemaCipos cipos;
@@ -225,7 +232,9 @@ int main(void)
         if (tempoTransicao > 0.0f) {
         tempoTransicao -= tempoQuadro;
 
-        const char *nomeFase = "Ilha das Marés Perdidas";
+        const char *nomeFase = fase.id == 1 ? "Cais do Recife" :
+                               fase.id == 2 ? "Ilha das Mares Perdidas" :
+                               fase.id == 3 ? "Escalada ao Navio" : "Arena do Capitao Avelino";
         int tamanhoFonte = 48;
         int x = (GetScreenWidth() - MeasureText(nomeFase, tamanhoFonte)) / 2;
         int y = (GetScreenHeight() - tamanhoFonte) / 2;
@@ -294,6 +303,14 @@ int main(void)
                 IniciarAnimacaoTiro(&nico);
             AtualizarAtiradores(&tiros, &inimigos, &nico, dt);
             int danoRecebido = 0;
+            if (fase.id == 4) {
+                int anteriorEstagio = EstagioAvelino(&avelino);
+                danoRecebido += AtualizarAvelino(&avelino, &nico, &espada, &tiros, dt);
+                if (avelino.saude > 0 && anteriorEstagio < 3 && EstagioAvelino(&avelino) == 3)
+                    ConvocarMarujos(&inimigos, 2, 2, 600, 0, fase.largura, nico.corpo.x);
+            }
+            if (fase.id == 4 && avelino.saude > 0)
+                danoRecebido += AtualizarBando(&bando, &nico, EstagioAvelino(&avelino), dt);
             if (fase.id == 3)
                 danoRecebido += AtualizarCanhoesEscalada(&canhoesEscalada, &tiros, &inimigos, &nico, dt);
             danoRecebido += AtualizarTiros(&tiros, &fase, &inimigos, &nico, dt);
@@ -305,7 +322,7 @@ int main(void)
             danoRecebido += AtualizarInimigos(&inimigos, &nico, dt);
             int derrotados = quantidadeAntes - inimigos.quantidade;
             AplicarDanoJogador(&saudeNico, &tempoProtecao, danoRecebido);
-            if (saudeNico > 0 && nico.corpo.y <= fase.limiteQueda) {
+            if (fase.id != 4 && saudeNico > 0 && nico.corpo.y <= fase.limiteQueda) {
                 saudeNico += derrotados;
                 if (saudeNico > SAUDE_MAXIMA) saudeNico = SAUDE_MAXIMA;
             }
@@ -322,13 +339,16 @@ int main(void)
                 ReiniciarCipos(&cipos);
                 ReiniciarCordas(&cordas);
                 ReiniciarCanhoesEscalada(&canhoesEscalada);
+                ReiniciarAvelino(&avelino);
+                ReiniciarBando(&bando);
 
                 LiberarInimigos(&inimigos);
                 InicializarLista(&inimigos);
                 CriarInimigosDaFase(&inimigos, fase.id);
                 ReiniciarEventos(&eventos);   // relogio local volta a 0, nada duplica
             } else if (destinoTeste != 0 ||
-                       ((fase.id == 1 || fase.id == 2) && CheckCollisionRecs(nico.corpo, fase.areaSaida))) {
+                       ((fase.id == 1 || fase.id == 2) && CheckCollisionRecs(nico.corpo, fase.areaSaida)) ||
+                       (fase.id == 3 && nico.corpo.y <= 200)) {
                 Fase proxima = {0};
                 int destino = destinoTeste ? destinoTeste : fase.id + 1;
                 if (CarregarFase(&proxima, destino)) {
@@ -345,6 +365,8 @@ int main(void)
                     ReiniciarCipos(&cipos);
                     ReiniciarCordas(&cordas);
                     ReiniciarCanhoesEscalada(&canhoesEscalada);
+                    ReiniciarAvelino(&avelino);
+                    ReiniciarBando(&bando);
                     LiberarInimigos(&inimigos);
                     InicializarLista(&inimigos);
                     CriarInimigosDaFase(&inimigos, fase.id);
@@ -370,6 +392,8 @@ int main(void)
         camera.target = (Vector2){cameraX, cameraY};
         BeginMode2D(camera);
         DesenharFase(&fase);
+        if (fase.id == 4) DesenharAvelino(&avelino);
+        if (fase.id == 4 && avelino.saude > 0) DesenharBando(&bando);
         if (fase.id == 2) DesenharCipos(&cipos);
         if (fase.id == 3) DesenharCordas(&cordas);
         if (fase.id == 3) DesenharCanhoesEscalada(&canhoesEscalada);
@@ -401,8 +425,8 @@ int main(void)
             DrawText("Solte durante a subida para alcancar o proximo cipo!", 24, 158, 18, RAYWHITE);
         if (fase.id == 3)
             DrawText("E: agarrar  W/S: subir/descer  A/D + ESPACO: saltar", 24, 130, 20, GOLD);
-        if (fase.id == 3 && nico.corpo.y <= 200)
-            DrawText("CONVES ALCANCADO - proxima etapa: chefe final", 24, 158, 20, GOLD);
+        if (fase.id == 4)
+            DrawText("ARENA DO CHEFE - batalha em desenvolvimento", 24, 130, 20, GOLD);
 
         for (int i = 0; i < SAUDE_MAXIMA; i++) {
             DesenharCoracao(24 + i * 40, 56, 4, i < saudeNico);
@@ -431,6 +455,7 @@ int main(void)
 
     LiberarInimigos(&inimigos);
     DescarregarFase(&fase);
+    DescarregarAvelino(&avelino);
     DescarregarVisualInimigos();
     DescarregarVisualTiros();
     DescarregarCipos(&cipos);

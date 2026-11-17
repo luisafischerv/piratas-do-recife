@@ -24,17 +24,6 @@ bool CadastrarDisparoCanhao(SequenciaEventos *seq, float instante, int indiceCan
     return CadastrarEvento(seq, e);
 }
 
-// Ilha: reforcos de marujos durante a travessia (valores EXPERIMENTAIS).
-// Os limites ficam em chao firme, porque o marujo ainda nao colide com o cenario.
-// A ordem de cadastro nao precisa seguir o tempo: OrdenarEventos arruma.
-static void EventosDaIlha(SequenciaEventos *seq)
-{
-    // Chao firme da ilha: 1400-1650 (antes dos cipos) e 2960-3280 (depois dos cipos).
-    CadastrarSurgimentoMarujo(seq, 15.0f, 3200.0f, CHAO_Y, 2965.0f, 3275.0f); // empate em t=15:
-    CadastrarSurgimentoMarujo(seq,  5.0f, 1600.0f, CHAO_Y, 1405.0f, 1645.0f);
-    CadastrarSurgimentoMarujo(seq, 15.0f, 3000.0f, CHAO_Y, 2965.0f, 3275.0f); // fica nesta ordem
-}
-
 // Navio: tripulacao surgindo e canhoes anunciados (valores EXPERIMENTAIS).
 // POSICOES PROVISORIAS: supoe convés continuo de 0 a 3200 com chao em y = 620;
 // ajustar quando a Pessoa 2 criar a fase 3. Indices dos canhoes: 0 (x=1150),
@@ -61,8 +50,8 @@ static void EventosDoNavio(SequenciaEventos *seq)
 
 void MontarEventosDaFase(SequenciaEventos *seq, int faseId)
 {
+    (void)faseId;
     InicializarSequencia(seq);
-    if (faseId == 2) EventosDaIlha(seq);
     // A fase 3 atual usa a sequencia vertical de canhoes_escalada.c.
 
     OrdenarEventos(seq->eventos, seq->quantidade);
