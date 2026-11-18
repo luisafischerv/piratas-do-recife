@@ -14,7 +14,6 @@
 #include "provisorio/troca_fase.h"
 #include <math.h>
 #include "ranking.h"
-#include "vitoria.h"
 
 #define SAUDE_MAXIMA 3
 #define DURACAO_PROTECAO 1.0f
@@ -162,6 +161,7 @@ static void DesenharFinalIlustrado(Texture2D imagem){
         Rectangle destino = { 0, 0, (float)largura, (float)altura };
 
         DrawTexturePro(imagem, origem, destino, (Vector2){ 0, 0 }, 0.0f, WHITE);
+        return;
     }
 
     DrawRectangle(0, altura - 180, largura, 180, Fade(BLACK, 0.85f));
@@ -196,7 +196,7 @@ int main(void)
     SetTargetFPS(60);
     SetExitKey(KEY_NULL);
     Texture2D fundoInicial = LoadTexture("assets/images/capa_nova_proposta.png");
-    Texture2D fundoFinal = LoadTexture("assets/images/final_recife.png");
+    Texture2D fundoFinal = LoadTexture("assets/images/final_recife_aprovado.png");
     Texture2D fundoIntroducao = LoadTexture("assets/images/transicoes/historia_leitura_proposta.png");
     Texture2D transicoes[4] = {
         LoadTexture("assets/images/transicoes/cais.png"),
@@ -247,15 +247,10 @@ int main(void)
     const char *arquivoRanking = ARQUIVO_RANKING;
     CarregarRanking(&ranking, arquivoRanking);
 
-    bool resultadoConfirmado = false;
     const char *mensagemRanking = "";
     bool naTelaInicial = true;
     bool naIntroducao = false;
     bool naTransicao = true;
-    TelaVitoria vitoria;
-    IniciarVitoria(&vitoria, 0.0);
-    bool naVitoria = false;
-    float esperaVitoria = -1.0f;
     while (!WindowShouldClose()) {
 
         if (campanhaConcluida) {
@@ -271,18 +266,45 @@ int main(void)
                 continue;
             }
 
-            if (!resultadoConfirmado) {
-                AtualizarApelido(apelido, &tamanhoApelido);
-
-                if (IsKeyPressed(KEY_ENTER) && tamanhoApelido > 0) {
-                    resultadoConfirmado = true;
-
-                    if (!RegistrarResultado(&ranking, apelido, tempoTotal)) {
-                        mensagemRanking = "Seu tempo ficou fora dos 10 melhores.";
-                    } else if (SalvarRanking(&ranking, arquivoRanking)) {
-                        mensagemRanking = "Resultado salvo!";
+            AtualizarApelido(apelido, &tamanhoApelido);
+            if (IsKeyPressed(KEY_ENTER) && tamanhoApelido > 0) {
+                Fase primeira = {0};
+                if (!CarregarFase(&primeira, 1)) {
+                    mensagemRanking = "Nao foi possivel reiniciar a campanha.";
+                } else {
+                    bool entrou = RegistrarResultado(&ranking, apelido, tempoTotal);
+                    if (entrou && !SalvarRanking(&ranking, arquivoRanking)) {
+                        CarregarRanking(&ranking, arquivoRanking);
+                        DescarregarFase(&primeira);
+                        mensagemRanking = "Nao foi possivel salvar. Pressione Enter para tentar novamente.";
                     } else {
-                        mensagemRanking = "Nao foi possivel salvar o ranking.";
+                        DescarregarFase(&fase);
+                        fase = primeira;
+                        nico = nicoInicial;
+                        nico.corpo.x = fase.pontoInicial.x;
+                        nico.corpo.y = fase.pontoInicial.y;
+                        saudeNico = SAUDE_MAXIMA;
+                        tempoProtecao = 0.0f;
+                        tempoTotal = 0.0;
+                        InicializarEspada(&espada);
+                        InicializarTiros(&tiros);
+                        ReiniciarCipos(&cipos);
+                        ReiniciarCordas(&cordas);
+                        ReiniciarCanhoesEscalada(&canhoesEscalada);
+                        ReiniciarAvelino(&avelino);
+                        ReiniciarBando(&bando);
+                        LiberarInimigos(&inimigos);
+                        InicializarLista(&inimigos);
+                        CriarInimigosDaFase(&inimigos, fase.id);
+                        campanhaConcluida = false;
+                        naTelaResultado = false;
+                        apelido[0] = '\0';
+                        tamanhoApelido = 0;
+                        mensagemRanking = "";
+                        pausado = false;
+                        naTelaInicial = true;
+                        naTransicao = true;
+                        continue;
                     }
                 }
             }
@@ -296,15 +318,11 @@ int main(void)
             DrawText(TextFormat("Tempo final: %s", tempoFormatado),
                      48, 115, 28, RAYWHITE);
 
-            if (resultadoConfirmado) {
-                DrawText(mensagemRanking, 48, 160, 22, RAYWHITE);
-                DesenharRanking(&ranking, 48, 205);
-            } else {
-                DrawText("Digite seu apelido (ate 12 caracteres)", 48, 175, 24, RAYWHITE);
-                DrawRectangleLines(48, 213, 360, 50, GOLD);
-                DrawText(apelido, 60, 225, 26, RAYWHITE);
-                DrawText("Pressione Enter para confirmar", 48, 280, 22, GOLD);
-            }
+            DrawText("Digite seu apelido (ate 12 caracteres)", 48, 175, 24, RAYWHITE);
+            DrawRectangleLines(48, 213, 360, 50, GOLD);
+            DrawText(apelido, 60, 225, 26, RAYWHITE);
+            DrawText("Pressione Enter para confirmar", 48, 280, 22, GOLD);
+            if (mensagemRanking[0]) DrawText(mensagemRanking, 48, 320, 20, RAYWHITE);
 
             EndDrawing();
             continue;
@@ -335,43 +353,6 @@ int main(void)
             continue;
         }
 
-        if (naVitoria) {
-            if (AtualizarVitoria(&vitoria, &ranking)) {
-                Fase primeira = {0};
-                if (CarregarFase(&primeira, 1)) {
-                    DescarregarFase(&fase);
-                    fase = primeira;
-                }
-                nico = nicoInicial;
-                nico.corpo.x = fase.pontoInicial.x;
-                nico.corpo.y = fase.pontoInicial.y;
-                saudeNico = SAUDE_MAXIMA;
-                tempoProtecao = 0.0f;
-                tempoTotal = 0.0;
-                InicializarEspada(&espada);
-                InicializarTiros(&tiros);
-                ReiniciarCipos(&cipos);
-                ReiniciarCordas(&cordas);
-                ReiniciarCanhoesEscalada(&canhoesEscalada);
-                ReiniciarAvelino(&avelino);
-                ReiniciarBando(&bando);
-                LiberarInimigos(&inimigos);
-                InicializarLista(&inimigos);
-                CriarInimigosDaFase(&inimigos, fase.id);
-                naVitoria = false;
-                esperaVitoria = -1.0f;
-                pausado = false;
-                naTelaInicial = true;
-                naTransicao = true;
-            }
-
-            BeginDrawing();
-            ClearBackground((Color){ 16, 43, 58, 255 });
-            DesenharVitoria(&vitoria, &ranking);
-            EndDrawing();
-            continue;
-        }
-
         float tempoQuadro = GetFrameTime();
 
         if (naTransicao) {
@@ -394,8 +375,12 @@ int main(void)
             pausado = !pausado;
         }
 
-        if (!pausado && esperaVitoria < 0.0f) {
+        if (!pausado) {
             int destinoTeste = DestinoTesteFase(fase.id);
+            if (destinoTeste == 5) {
+                campanhaConcluida = true;
+                continue;
+            }
             tempoTotal += tempoQuadro;
 
             float dt = tempoQuadro;
@@ -455,8 +440,6 @@ int main(void)
                 }
                 if (avelino.saude > 0 && anteriorEstagio < 3 && EstagioAvelino(&avelino) == 3)
                     ConvocarMarujos(&inimigos, 2, 2, 600, 0, fase.largura, nico.corpo.x);
-                if (fase.id == 4 && avelino.saude <= 0)
-                    esperaVitoria = 1.5f;
             }
             if (fase.id == 4 && avelino.saude > 0)
                 danoRecebido += AtualizarBando(&bando, &nico, EstagioAvelino(&avelino), dt);
@@ -476,7 +459,7 @@ int main(void)
                 if (saudeNico > SAUDE_MAXIMA) saudeNico = SAUDE_MAXIMA;
             }
 
-            if (esperaVitoria < 0.0f && (saudeNico <= 0 || nico.corpo.y > fase.limiteQueda)) {
+            if (saudeNico <= 0 || nico.corpo.y > fase.limiteQueda) {
                 RestaurarPlataformas(&fase);
                 nico = nicoInicial;
                 nico.corpo.x = fase.pontoInicial.x;
@@ -519,12 +502,6 @@ int main(void)
                     InicializarLista(&inimigos);
                     CriarInimigosDaFase(&inimigos, fase.id);
                 }
-            }
-        } else if (!pausado) {
-            esperaVitoria -= tempoQuadro;
-            if (esperaVitoria <= 0.0f) {
-                naVitoria = true;
-                IniciarVitoria(&vitoria, tempoTotal);
             }
         }
 
@@ -576,10 +553,7 @@ int main(void)
 
         int segundos = (int)tempoTotal;
         DrawText(TextFormat("Tempo: %02d:%02d", segundos / 60, segundos % 60), 24, 96, 22, RAYWHITE);
-        if (esperaVitoria >= 0.0f) {
-            const char *derrota = "O CAPITAO AVELINO FOI DERROTADO!";
-            DrawText(derrota, (GetScreenWidth() - MeasureText(derrota, 40)) / 2, 300, 40, GOLD);
-        }
+
 
         if (pausado) {
             DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.6f));
