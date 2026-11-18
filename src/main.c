@@ -252,8 +252,6 @@ int main(void)
     bool naTelaInicial = true;
     bool naIntroducao = false;
     bool naTransicao = true;
-    Ranking ranking;
-    CarregarRanking(&ranking, ARQUIVO_RANKING);
     TelaVitoria vitoria;
     IniciarVitoria(&vitoria, 0.0);
     bool naVitoria = false;
