@@ -151,7 +151,7 @@ static bool AvelinoDerrotado(const Avelino *avelino){
     return avelino->saude <= 0;
 }
 
-static void DesenharFinalIlustrado(Texture2D imagem, double tempoTotal){
+static void DesenharFinalIlustrado(Texture2D imagem){
     int largura = GetScreenWidth();
     int altura = GetScreenHeight();
 
@@ -169,9 +169,8 @@ static void DesenharFinalIlustrado(Texture2D imagem, double tempoTotal){
     DrawText("Nico derrotou Avelino. A nevoa recuou e a luz voltou ao Recife.",
              48, altura - 99, 24, RAYWHITE);
 
-    int segundos = (int)tempoTotal;
-    DrawText(TextFormat("Tempo final: %02d:%02d", segundos / 60, segundos % 60),
-             48, altura - 55, 24, RAYWHITE);
+    DrawText("Pressione Enter para ver o resultado",
+             48, altura - 55, 22, GOLD);
 }
 
 static void AtualizarApelido(char apelido[TAM_APELIDO], int *tamanho){
@@ -197,6 +196,7 @@ int main(void)
     SetTargetFPS(60);
     SetExitKey(KEY_NULL);
     Texture2D fundoInicial = LoadTexture("assets/images/capa_nova_proposta.png");
+    Texture2D fundoFinal = LoadTexture("assets/images/final_recife.png");
     Texture2D fundoIntroducao = LoadTexture("assets/images/transicoes/historia_leitura_proposta.png");
     Texture2D transicoes[4] = {
         LoadTexture("assets/images/transicoes/cais.png"),
@@ -240,8 +240,15 @@ int main(void)
     bool pausado = false;
     double tempoTotal = 0.0;
     bool campanhaConcluida = false;
+    bool naTelaResultado = false;
     char apelido[TAM_APELIDO] = "";
     int tamanhoApelido = 0;
+    Ranking ranking;
+    const char *arquivoRanking = ARQUIVO_RANKING;
+    CarregarRanking(&ranking, arquivoRanking);
+
+    bool resultadoConfirmado = false;
+    const char *mensagemRanking = "";
     bool naTelaInicial = true;
     bool naIntroducao = false;
     bool naTransicao = true;
@@ -254,18 +261,55 @@ int main(void)
     while (!WindowShouldClose()) {
 
         if (campanhaConcluida) {
-        int segundos = (int)tempoTotal;
+            if (!naTelaResultado) {
+                if (IsKeyPressed(KEY_ENTER)) {
+                    naTelaResultado = true;
+                }
 
-        AtualizarApelido(apelido, &tamanhoApelido);
-        BeginDrawing();
-        ClearBackground((Color){ 16, 43, 58, 255 });
-        DrawText("VITORIA!", 48, 48, 48, GOLD);
-        DrawText(TextFormat("Tempo final: %02d:%02d", segundos / 60, segundos % 60), 48, 115, 28, RAYWHITE);
-        DrawText("Digite seu apelido (ate 12 caracteres)", 48, 175, 24, RAYWHITE);
-        DrawRectangleLines(48, 213, 360, 50, GOLD);
-        DrawText(apelido, 60, 225, 26, RAYWHITE);
-        EndDrawing();
-        continue;
+                BeginDrawing();
+                ClearBackground((Color){ 16, 43, 58, 255 });
+                DesenharFinalIlustrado(fundoFinal);
+                EndDrawing();
+                continue;
+            }
+
+            if (!resultadoConfirmado) {
+                AtualizarApelido(apelido, &tamanhoApelido);
+
+                if (IsKeyPressed(KEY_ENTER) && tamanhoApelido > 0) {
+                    resultadoConfirmado = true;
+
+                    if (!RegistrarResultado(&ranking, apelido, tempoTotal)) {
+                        mensagemRanking = "Seu tempo ficou fora dos 10 melhores.";
+                    } else if (SalvarRanking(&ranking, arquivoRanking)) {
+                        mensagemRanking = "Resultado salvo!";
+                    } else {
+                        mensagemRanking = "Nao foi possivel salvar o ranking.";
+                    }
+                }
+            }
+
+            BeginDrawing();
+            ClearBackground((Color){ 16, 43, 58, 255 });
+            DrawText("VITORIA!", 48, 48, 48, GOLD);
+
+            char tempoFormatado[32];
+            FormatarTempo(tempoTotal, tempoFormatado, sizeof tempoFormatado);
+            DrawText(TextFormat("Tempo final: %s", tempoFormatado),
+                     48, 115, 28, RAYWHITE);
+
+            if (resultadoConfirmado) {
+                DrawText(mensagemRanking, 48, 160, 22, RAYWHITE);
+                DesenharRanking(&ranking, 48, 205);
+            } else {
+                DrawText("Digite seu apelido (ate 12 caracteres)", 48, 175, 24, RAYWHITE);
+                DrawRectangleLines(48, 213, 360, 50, GOLD);
+                DrawText(apelido, 60, 225, 26, RAYWHITE);
+                DrawText("Pressione Enter para confirmar", 48, 280, 22, GOLD);
+            }
+
+            EndDrawing();
+            continue;
         }
 
         if (naTelaInicial) {
@@ -571,6 +615,9 @@ int main(void)
     if (fundoIntroducao.id) UnloadTexture(fundoIntroducao);
     if (fundoInicial.id != 0) {
         UnloadTexture(fundoInicial);
+    }
+    if (fundoFinal.id != 0) {
+        UnloadTexture(fundoFinal);
     }
     CloseWindow();
     return 0;
