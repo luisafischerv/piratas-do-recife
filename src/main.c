@@ -147,6 +147,50 @@ static void DesenharIntroducao(Texture2D imagem) {
     }
 }
 
+static bool AvelinoDerrotado(const Avelino *avelino){
+    return avelino->saude <= 0;
+}
+
+static void DesenharFinalIlustrado(Texture2D imagem, double tempoTotal){
+    int largura = GetScreenWidth();
+    int altura = GetScreenHeight();
+
+    if (imagem.id != 0) {
+        Rectangle origem = {
+            0, 0, (float)imagem.width, (float)imagem.height
+        };
+        Rectangle destino = { 0, 0, (float)largura, (float)altura };
+
+        DrawTexturePro(imagem, origem, destino, (Vector2){ 0, 0 }, 0.0f, WHITE);
+    }
+
+    DrawRectangle(0, altura - 180, largura, 180, Fade(BLACK, 0.85f));
+    DrawText("VITORIA!", 48, altura - 155, 40, GOLD);
+    DrawText("Nico derrotou Avelino. A nevoa recuou e a luz voltou ao Recife.",
+             48, altura - 99, 24, RAYWHITE);
+
+    int segundos = (int)tempoTotal;
+    DrawText(TextFormat("Tempo final: %02d:%02d", segundos / 60, segundos % 60),
+             48, altura - 55, 24, RAYWHITE);
+}
+
+static void AtualizarApelido(char apelido[TAM_APELIDO], int *tamanho){
+    if (IsKeyPressed(KEY_BACKSPACE) && *tamanho > 0) {
+        (*tamanho)--;
+        apelido[*tamanho] = '\0';
+    }
+
+    int caractere;
+    while ((caractere = GetCharPressed()) != 0) {
+        if (caractere >= 32 && caractere <= 126 && caractere != ';' &&
+            *tamanho < TAM_APELIDO - 1) {
+            apelido[*tamanho] = (char)caractere;
+            (*tamanho)++;
+            apelido[*tamanho] = '\0';
+        }
+    }
+}
+
 int main(void)
 {
     InitWindow(1280, 720, "Piratas do Recife: A Maldicao da Mare Negra");
@@ -195,6 +239,9 @@ int main(void)
     float tempoProtecao = 0.0f;
     bool pausado = false;
     double tempoTotal = 0.0;
+    bool campanhaConcluida = false;
+    char apelido[TAM_APELIDO] = "";
+    int tamanhoApelido = 0;
     bool naTelaInicial = true;
     bool naIntroducao = false;
     bool naTransicao = true;
@@ -205,6 +252,22 @@ int main(void)
     bool naVitoria = false;
     float esperaVitoria = -1.0f;
     while (!WindowShouldClose()) {
+
+        if (campanhaConcluida) {
+        int segundos = (int)tempoTotal;
+
+        AtualizarApelido(apelido, &tamanhoApelido);
+        BeginDrawing();
+        ClearBackground((Color){ 16, 43, 58, 255 });
+        DrawText("VITORIA!", 48, 48, 48, GOLD);
+        DrawText(TextFormat("Tempo final: %02d:%02d", segundos / 60, segundos % 60), 48, 115, 28, RAYWHITE);
+        DrawText("Digite seu apelido (ate 12 caracteres)", 48, 175, 24, RAYWHITE);
+        DrawRectangleLines(48, 213, 360, 50, GOLD);
+        DrawText(apelido, 60, 225, 26, RAYWHITE);
+        EndDrawing();
+        continue;
+        }
+
         if (naTelaInicial) {
             if (IsKeyPressed(KEY_ENTER)) {
                 naTelaInicial = false;
@@ -344,6 +407,10 @@ int main(void)
             if (fase.id == 4) {
                 int anteriorEstagio = EstagioAvelino(&avelino);
                 danoRecebido += AtualizarAvelino(&avelino, &nico, &espada, &tiros, dt);
+                if (AvelinoDerrotado(&avelino)) {
+                    campanhaConcluida = true;
+                    continue;
+                }
                 if (avelino.saude > 0 && anteriorEstagio < 3 && EstagioAvelino(&avelino) == 3)
                     ConvocarMarujos(&inimigos, 2, 2, 600, 0, fase.largura, nico.corpo.x);
                 if (fase.id == 4 && avelino.saude <= 0)
