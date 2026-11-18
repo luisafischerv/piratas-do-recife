@@ -13,6 +13,8 @@
 #include "bando_caranguejos.h"
 #include "provisorio/troca_fase.h"
 #include <math.h>
+#include "ranking.h"
+#include "vitoria.h"
 
 #define SAUDE_MAXIMA 3
 #define DURACAO_PROTECAO 1.0f
@@ -196,6 +198,12 @@ int main(void)
     bool naTelaInicial = true;
     bool naIntroducao = false;
     bool naTransicao = true;
+    Ranking ranking;
+    CarregarRanking(&ranking, ARQUIVO_RANKING);
+    TelaVitoria vitoria;
+    IniciarVitoria(&vitoria, 0.0);
+    bool naVitoria = false;
+    float esperaVitoria = -1.0f;
     while (!WindowShouldClose()) {
         if (naTelaInicial) {
             if (IsKeyPressed(KEY_ENTER)) {
@@ -222,6 +230,43 @@ int main(void)
             continue;
         }
 
+        if (naVitoria) {
+            if (AtualizarVitoria(&vitoria, &ranking)) {
+                Fase primeira = {0};
+                if (CarregarFase(&primeira, 1)) {
+                    DescarregarFase(&fase);
+                    fase = primeira;
+                }
+                nico = nicoInicial;
+                nico.corpo.x = fase.pontoInicial.x;
+                nico.corpo.y = fase.pontoInicial.y;
+                saudeNico = SAUDE_MAXIMA;
+                tempoProtecao = 0.0f;
+                tempoTotal = 0.0;
+                InicializarEspada(&espada);
+                InicializarTiros(&tiros);
+                ReiniciarCipos(&cipos);
+                ReiniciarCordas(&cordas);
+                ReiniciarCanhoesEscalada(&canhoesEscalada);
+                ReiniciarAvelino(&avelino);
+                ReiniciarBando(&bando);
+                LiberarInimigos(&inimigos);
+                InicializarLista(&inimigos);
+                CriarInimigosDaFase(&inimigos, fase.id);
+                naVitoria = false;
+                esperaVitoria = -1.0f;
+                pausado = false;
+                naTelaInicial = true;
+                naTransicao = true;
+            }
+
+            BeginDrawing();
+            ClearBackground((Color){ 16, 43, 58, 255 });
+            DesenharVitoria(&vitoria, &ranking);
+            EndDrawing();
+            continue;
+        }
+
         float tempoQuadro = GetFrameTime();
 
         if (naTransicao) {
@@ -244,7 +289,7 @@ int main(void)
             pausado = !pausado;
         }
 
-        if (!pausado) {
+        if (!pausado && esperaVitoria < 0.0f) {
             int destinoTeste = DestinoTesteFase(fase.id);
             tempoTotal += tempoQuadro;
 
@@ -301,6 +346,8 @@ int main(void)
                 danoRecebido += AtualizarAvelino(&avelino, &nico, &espada, &tiros, dt);
                 if (avelino.saude > 0 && anteriorEstagio < 3 && EstagioAvelino(&avelino) == 3)
                     ConvocarMarujos(&inimigos, 2, 2, 600, 0, fase.largura, nico.corpo.x);
+                if (fase.id == 4 && avelino.saude <= 0)
+                    esperaVitoria = 1.5f;
             }
             if (fase.id == 4 && avelino.saude > 0)
                 danoRecebido += AtualizarBando(&bando, &nico, EstagioAvelino(&avelino), dt);
@@ -320,7 +367,7 @@ int main(void)
                 if (saudeNico > SAUDE_MAXIMA) saudeNico = SAUDE_MAXIMA;
             }
 
-            if (saudeNico <= 0 || nico.corpo.y > fase.limiteQueda) {
+            if (esperaVitoria < 0.0f && (saudeNico <= 0 || nico.corpo.y > fase.limiteQueda)) {
                 RestaurarPlataformas(&fase);
                 nico = nicoInicial;
                 nico.corpo.x = fase.pontoInicial.x;
@@ -363,6 +410,12 @@ int main(void)
                     InicializarLista(&inimigos);
                     CriarInimigosDaFase(&inimigos, fase.id);
                 }
+            }
+        } else if (!pausado) {
+            esperaVitoria -= tempoQuadro;
+            if (esperaVitoria <= 0.0f) {
+                naVitoria = true;
+                IniciarVitoria(&vitoria, tempoTotal);
             }
         }
 
@@ -413,8 +466,11 @@ int main(void)
         }
 
         int segundos = (int)tempoTotal;
-        DrawText(TextFormat("Tempo: %02d:%02d", segundos / 60, segundos % 60),
-                 24, 96, 22, RAYWHITE);
+        DrawText(TextFormat("Tempo: %02d:%02d", segundos / 60, segundos % 60), 24, 96, 22, RAYWHITE);
+        if (esperaVitoria >= 0.0f) {
+            const char *derrota = "O CAPITAO AVELINO FOI DERROTADO!";
+            DrawText(derrota, (GetScreenWidth() - MeasureText(derrota, 40)) / 2, 300, 40, GOLD);
+        }
 
         if (pausado) {
             DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.6f));
