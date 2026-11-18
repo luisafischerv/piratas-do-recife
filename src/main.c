@@ -11,7 +11,6 @@
 #include "canhoes_escalada.h"
 #include "avelino.h"
 #include "bando_caranguejos.h"
-#include "provisorio/troca_fase.h"
 #include <math.h>
 #include "ranking.h"
 
@@ -393,11 +392,6 @@ int main(void)
         }
 
         if (!pausado) {
-            int destinoTeste = DestinoTesteFase(fase.id);
-            if (destinoTeste == 5) {
-                campanhaConcluida = true;
-                continue;
-            }
             tempoTotal += tempoQuadro;
 
             float dt = tempoQuadro;
@@ -494,11 +488,10 @@ int main(void)
                 LiberarInimigos(&inimigos);
                 InicializarLista(&inimigos);
                 CriarInimigosDaFase(&inimigos, fase.id);
-            } else if (destinoTeste != 0 ||
-                       ((fase.id == 1 || fase.id == 2) && inimigos.quantidade == 0 && CheckCollisionRecs(nico.corpo, fase.areaSaida)) ||
+            } else if (((fase.id == 1 || fase.id == 2) && inimigos.quantidade == 0 && CheckCollisionRecs(nico.corpo, fase.areaSaida)) ||
                        (fase.id == 3 && nico.corpo.y <= 200)) {
                 Fase proxima = {0};
-                int destino = destinoTeste ? destinoTeste : fase.id + 1;
+                int destino = fase.id + 1;
                 if (CarregarFase(&proxima, destino)) {
                     DescarregarFase(&fase);
                     fase = proxima;
