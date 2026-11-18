@@ -4,6 +4,7 @@
 #include "fase.h"
 #include "inimigos.h"
 
+#define ATIRADOR_SAUDE 3
 #define MAX_TIROS 64
 // A arte dos personagens ultrapassa o topo do colisor usado para movimento.
 #define ALTURA_TIRO_RELATIVA (-0.10f)

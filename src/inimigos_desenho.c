@@ -98,9 +98,12 @@ void DesenharInimigos(const ListaInimigos *lista)
         case INIMIGO_MARUJO:
             DesenharMarujo(&no->dados);
             break;
-        case INIMIGO_ATIRADOR:
+
+        case INIMIGO_ATIRADOR: {
+            const Inimigo *at = &no->dados;
+            float topoAtirador = at->corpo.y;
+
             if (texturaAtirador.id) {
-                const Inimigo *at = &no->dados;
                 int quadro = 0;
                 Texture2D textura = texturaAtirador;
                 if (at->estado == ESTADO_PREPARACAO) {
@@ -125,12 +128,27 @@ void DesenharInimigos(const ListaInimigos *lista)
                 Rectangle destino = { at->corpo.x + at->corpo.width / 2.0f - largura / 2.0f,
                                       at->corpo.y + at->corpo.height - altura * 0.96f,
                                       largura, altura };
+                topoAtirador = destino.y;
                 DrawTexturePro(textura, origem, destino, (Vector2){0, 0}, 0.0f,
                                at->tempoDano > 0.0f ? RED : WHITE);
             } else {
-                DrawRectangleRec(no->dados.corpo, no->dados.tempoDano > 0 ? WHITE : DARKPURPLE);
+                DrawRectangleRec(at->corpo, at->tempoDano > 0 ? WHITE : DARKPURPLE);
+            }
+
+            const int pixel = 2;
+            const int espaco = 4;
+            const int passo = 8 * pixel + espaco;
+            const int larguraTotal = ATIRADOR_SAUDE * passo - espaco;
+
+            float centroX = at->corpo.x + at->corpo.width / 2.0f;
+            int inicioX = (int)(centroX - larguraTotal / 2.0f);
+            int yCoracoes = (int)topoAtirador - 7 * pixel - 3;
+
+            for (int i = 0; i < ATIRADOR_SAUDE; i++) {
+                DesenharCoracao(inicioX + i * passo, yCoracoes, pixel, i < at->saude);
             }
             break;
+        }
         }
     }
 }
