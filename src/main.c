@@ -241,6 +241,7 @@ int main(void)
     double tempoTotal = 0.0;
     bool campanhaConcluida = false;
     bool naTelaResultado = false;
+    bool rankingExibido = false;
     char apelido[TAM_APELIDO] = "";
     int tamanhoApelido = 0;
     Ranking ranking;
@@ -266,46 +267,56 @@ int main(void)
                 continue;
             }
 
-            AtualizarApelido(apelido, &tamanhoApelido);
-            if (IsKeyPressed(KEY_ENTER) && tamanhoApelido > 0) {
+            if (!rankingExibido) {
+                AtualizarApelido(apelido, &tamanhoApelido);
+                if (IsKeyPressed(KEY_ENTER) && tamanhoApelido > 0) {
+                    bool entrou = RegistrarResultado(&ranking, apelido, tempoTotal);
+                    if (entrou && !SalvarRanking(&ranking, arquivoRanking)) {
+                        CarregarRanking(&ranking, arquivoRanking);
+                        mensagemRanking = "Nao foi possivel salvar. Pressione Enter para tentar novamente.";
+                    } else {
+                        mensagemRanking = entrou ? "Resultado salvo!" : "Seu tempo ficou fora dos 10 melhores.";
+                        rankingExibido = true;
+                    }
+                }
+            } else if (IsKeyPressed(KEY_ENTER)) {
                 Fase primeira = {0};
                 if (!CarregarFase(&primeira, 1)) {
                     mensagemRanking = "Nao foi possivel reiniciar a campanha.";
                 } else {
-                    bool entrou = RegistrarResultado(&ranking, apelido, tempoTotal);
-                    if (entrou && !SalvarRanking(&ranking, arquivoRanking)) {
-                        CarregarRanking(&ranking, arquivoRanking);
-                        DescarregarFase(&primeira);
-                        mensagemRanking = "Nao foi possivel salvar. Pressione Enter para tentar novamente.";
-                    } else {
-                        DescarregarFase(&fase);
-                        fase = primeira;
-                        nico = nicoInicial;
-                        nico.corpo.x = fase.pontoInicial.x;
-                        nico.corpo.y = fase.pontoInicial.y;
-                        saudeNico = SAUDE_MAXIMA;
-                        tempoProtecao = 0.0f;
-                        tempoTotal = 0.0;
-                        InicializarEspada(&espada);
-                        InicializarTiros(&tiros);
-                        ReiniciarCipos(&cipos);
-                        ReiniciarCordas(&cordas);
-                        ReiniciarCanhoesEscalada(&canhoesEscalada);
-                        ReiniciarAvelino(&avelino);
-                        ReiniciarBando(&bando);
-                        LiberarInimigos(&inimigos);
-                        InicializarLista(&inimigos);
-                        CriarInimigosDaFase(&inimigos, fase.id);
-                        campanhaConcluida = false;
-                        naTelaResultado = false;
-                        apelido[0] = '\0';
-                        tamanhoApelido = 0;
-                        mensagemRanking = "";
-                        pausado = false;
-                        naTelaInicial = true;
-                        naTransicao = true;
-                        continue;
-                    }
+                    DescarregarFase(&fase);
+                    fase = primeira;
+                    nico = nicoInicial;
+                    nico.corpo.x = fase.pontoInicial.x;
+                    nico.corpo.y = fase.pontoInicial.y;
+                    saudeNico = SAUDE_MAXIMA;
+                    tempoProtecao = 0.0f;
+                    tempoTotal = 0.0;
+                    InicializarEspada(&espada);
+                    InicializarTiros(&tiros);
+                    ReiniciarCipos(&cipos);
+                    ReiniciarCordas(&cordas);
+                    ReiniciarCanhoesEscalada(&canhoesEscalada);
+                    ReiniciarAvelino(&avelino);
+                    ReiniciarBando(&bando);
+                    LiberarInimigos(&inimigos);
+                    InicializarLista(&inimigos);
+                    CriarInimigosDaFase(&inimigos, fase.id);
+                    campanhaConcluida = false;
+                    naTelaResultado = false;
+                    rankingExibido = false;
+                    apelido[0] = '\0';
+                    tamanhoApelido = 0;
+                    mensagemRanking = "";
+                    pausado = false;
+                    naTelaInicial = true;
+                    naIntroducao = false;
+                    naTransicao = true;
+                    BeginDrawing();
+                    ClearBackground((Color){16, 43, 58, 255});
+                    DesenharTelaInicial(fundoInicial);
+                    EndDrawing();
+                    continue;
                 }
             }
 
@@ -318,11 +329,17 @@ int main(void)
             DrawText(TextFormat("Tempo final: %s", tempoFormatado),
                      48, 115, 28, RAYWHITE);
 
-            DrawText("Digite seu apelido (ate 12 caracteres)", 48, 175, 24, RAYWHITE);
-            DrawRectangleLines(48, 213, 360, 50, GOLD);
-            DrawText(apelido, 60, 225, 26, RAYWHITE);
-            DrawText("Pressione Enter para confirmar", 48, 280, 22, GOLD);
-            if (mensagemRanking[0]) DrawText(mensagemRanking, 48, 320, 20, RAYWHITE);
+            if (rankingExibido) {
+                DrawText(mensagemRanking, 48, 155, 22, RAYWHITE);
+                DesenharRanking(&ranking, 48, 200);
+                DrawText("Pressione Enter para voltar ao inicio", 48, 655, 22, GOLD);
+            } else {
+                DrawText("Digite seu apelido (ate 12 caracteres)", 48, 175, 24, RAYWHITE);
+                DrawRectangleLines(48, 213, 360, 50, GOLD);
+                DrawText(apelido, 60, 225, 26, RAYWHITE);
+                DrawText("Pressione Enter para confirmar", 48, 280, 22, GOLD);
+                if (mensagemRanking[0]) DrawText(mensagemRanking, 48, 320, 20, RAYWHITE);
+            }
 
             EndDrawing();
             continue;
