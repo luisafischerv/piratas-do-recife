@@ -55,7 +55,7 @@ Inimigo CriarAtirador(float x, float chaoY)
     i.tipo = INIMIGO_ATIRADOR;
     i.corpo = (Rectangle){x, chaoY - 64.0f, 44.0f, 64.0f};
     i.direcao = -1;
-    i.saude = 3;
+    i.saude = ATIRADOR_SAUDE;
     i.estado = ESTADO_RECUPERACAO;
     i.timerEstado = 0.8f;
     i.limiteEsquerdo = x - 100.0f;
